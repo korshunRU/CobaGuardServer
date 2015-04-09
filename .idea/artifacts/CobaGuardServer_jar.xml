@@ -1,0 +1,15 @@
+<component name="ArtifactManager">
+  <artifact build-on-make="true" name="CobaGuardServer:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/CobaGuardServer_jar</output-path>
+    <root id="root">
+      <element id="archive" name="CobaGuardServer.jar">
+        <element id="module-output" name="CobaGuardServer" />
+      </element>
+      <element id="file-copy" path="$PROJECT_DIR$/coba.conf" />
+      <element id="directory" name="img">
+        <element id="dir-copy" path="$PROJECT_DIR$/img" />
+      </element>
+      <element id="directory" name="logs" />
+    </root>
+  </artifact>
+</component>
