@@ -14,6 +14,7 @@ public class Root {
     private int PORT_FILES;
     private int ACCEPT_TIMEOUT;
     public static String COBA_PATH_NAME;
+    public int test = 0;
 
     private final String CONFIG_FILE = "coba.conf";
     private HashMap<String, String> params = new HashMap<>();
