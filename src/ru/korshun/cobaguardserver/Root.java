@@ -235,7 +235,7 @@ class ClientConnect
                     System.out.println(deviceId + ": Получен запрос на скачивание");
                     Logging.writeToFile(deviceId, "access", "Получен запрос на скачивание");
 
-                    Socket sendFileClient =             null;
+//                    Socket sendFileClient =             null;
                     int countErrorConnection =          0;
 
                     for (String newFile : listNewFiles) {
@@ -257,6 +257,8 @@ class ClientConnect
 
                         System.out.println(deviceId + ": Ожидаем подключения для скачивания ...");
                         Logging.writeToFile(deviceId, "access", "Ожидаем подключения для скачивания ...");
+
+                        Socket sendFileClient =                     null;
 
                         try {
                             sendFileClient = s1.accept();
@@ -304,6 +306,7 @@ class ClientConnect
                                 System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
                             } finally {
                                 sendFileClient.close();
+//                                sendFileClient =                            null;
 
                                 if(!fileName.delete()) {
                                     System.out.println(deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
