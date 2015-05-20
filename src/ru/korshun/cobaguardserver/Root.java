@@ -237,6 +237,7 @@ class ClientConnect
 
 //                    Socket sendFileClient =             null;
                     int countErrorConnection =          0;
+                    boolean isLimitErrorConnection =    false;
 
                     for (String newFile : listNewFiles) {
 
@@ -268,6 +269,7 @@ class ClientConnect
 
                             if(++countErrorConnection >= Root.MAX_ERROR_CONNECT) {
                                 System.out.println(deviceId + ": ИСЧЕРАПАН ЛИМИТ ПОДКЛЮЧЕНИЙ, ОТКЛЮЧАЕМСЯ");
+                                isLimitErrorConnection =            true;
                                 break;
                             }
 
@@ -331,6 +333,10 @@ class ClientConnect
 
                         }
 
+                    }
+
+                    if(isLimitErrorConnection) {
+                        break;
                     }
 
                 }
