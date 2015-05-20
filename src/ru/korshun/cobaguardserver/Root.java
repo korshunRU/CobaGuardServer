@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 
@@ -15,12 +17,22 @@ public class Root {
     private int ACCEPT_TIMEOUT;
     public static String COBA_PATH_NAME;
 
-    private final String CONFIG_FILE = "coba.conf";
-    private HashMap<String, String> params = new HashMap<>();
+    ExecutorService executorService;
+
+    protected static final int MAX_ERROR_CONNECT =          3;
+
+    private final String CONFIG_FILE =                      "coba.conf";
+    private HashMap<String, String> params =                new HashMap<>();
+
+
 
     private Root() {
         readFile();
         setParams();
+
+        SystemTrayIcon.createIcon();
+
+        executorService =                                   Executors.newCachedThreadPool();
     }
 
 
@@ -45,6 +57,7 @@ public class Root {
     }
 
 
+
     private void setParams() {
         PORT =                      Integer.parseInt(params.get("CONNECT_PORT"));
         PORT_FILES =                Integer.parseInt(params.get("DOWNLOAD_PORT"));
@@ -54,31 +67,29 @@ public class Root {
 
 
 
-//1
-
-
     private void serverStart() {
 
-        ServerSocket s = null, s1 = null;
+        ServerSocket socketConnect = null, socketSendFile = null;
 
         try {
 
-            s = new ServerSocket(PORT);
-            s1 = new ServerSocket(PORT_FILES);
-            s1.setSoTimeout(ACCEPT_TIMEOUT * 1000);
-
-            SystemTrayIcon.createIcon();
+            socketConnect =                                 new ServerSocket(PORT);
+            socketSendFile =                                new ServerSocket(PORT_FILES);
+            socketSendFile
+                    .setSoTimeout(ACCEPT_TIMEOUT * 1000);
 
             System.out.println("Сервер запущен");
 
             while (true) {
 
-                Socket client = s.accept();
+                Socket socketClientConnect = socketConnect.accept();
 
-                new ClientConnect(s1, client).start();
+//                new ClientConnect(socketSendFile, socketClientConnect).start();
 
-                System.out.println("Клиент подключился: " + client);
-                Logging.writeToFile("access", "Клиент подключился: " + client);
+                executorService.submit(new ClientConnect(socketSendFile, socketClientConnect));
+
+                System.out.println("Клиент подключился: " + socketClientConnect);
+                Logging.writeToFile("access", "Клиент подключился: " + socketClientConnect);
 
             }
 
@@ -87,11 +98,11 @@ public class Root {
             Logging.writeToFile("error", e.getMessage());
         } finally {
             try {
-                if (s != null) {
-                    s.close();
+                if (socketConnect != null) {
+                    socketConnect.close();
                 }
-                if (s1 != null) {
-                    s1.close();
+                if (socketSendFile != null) {
+                    socketSendFile.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -114,25 +125,26 @@ public class Root {
 
 
 class ClientConnect
-    extends Thread {
+    implements Runnable {
 
     private ServerSocket s1;
-    private Socket client;
+    private Socket connectClient;
     private String deviceId;
     private int filesCount;
 
-    public ClientConnect(ServerSocket s1, Socket client) {
+    public ClientConnect(ServerSocket s1, Socket ConnectClient) {
         this.s1 = s1;
-        this.client = client;
+        this.connectClient = ConnectClient;
 
-        System.out.println("Сессия для " + client + " открыта");
+        System.out.println("Сессия для " + ConnectClient + " открыта");
     }
 
-    public void run(){
+    @Override
+    public void run() {
 
         try (
-                BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(client.getOutputStream())), true)
+                BufferedReader in = new BufferedReader(new InputStreamReader(connectClient.getInputStream()));
+                PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(connectClient.getOutputStream())), true)
         ) {
 
             ArrayList<String> listNewFiles = new ArrayList<>();
@@ -162,7 +174,7 @@ class ClientConnect
 
                     System.out.println(deviceId + ": Обновление завершено, клиент отключился");
 
-                    Logging.writeToFile("access", "Обновление завершено, клиент " + this.client +
+                    Logging.writeToFile("access", "Обновление завершено, клиент " + this.connectClient +
                             " отключился \r\n\r\n====================================================================================== \r\n");
                     Logging.writeToFile(deviceId, "access", "Обновление завершено, " +
                             "клиент отключился \r\n\r\n====================================================================================== \r\n");
@@ -183,14 +195,20 @@ class ClientConnect
                     Logging.writeToFile(deviceId, "access", "Сессия открыта");
                     Logging.writeToFile(deviceId, "access", "Запрашивается количество новых файлов");
 
+                    File cobaPath =                             new File(Root.COBA_PATH_NAME);
+                    File[] countFiles =                         cobaPath.listFiles();
 
-                    for (File file : new File(Root.COBA_PATH_NAME).listFiles()) {
+                    if (cobaPath.isDirectory() && countFiles != null) {
 
-                        if (file.isFile()) {
+                        for (File file : countFiles) {
 
-                            if ((Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
+                            if (file.isFile()) {
 
-                                listNewFiles.add(file.getName());
+                                if ((Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
+
+                                    listNewFiles.add(file.getName());
+
+                                }
 
                             }
 
@@ -217,7 +235,8 @@ class ClientConnect
                     System.out.println(deviceId + ": Получен запрос на скачивание");
                     Logging.writeToFile(deviceId, "access", "Получен запрос на скачивание");
 
-                    Socket client1;
+                    Socket sendFileClient =             null;
+                    int countErrorConnection =          0;
 
                     for (String newFile : listNewFiles) {
 
@@ -239,37 +258,73 @@ class ClientConnect
                         System.out.println(deviceId + ": Ожидаем подключения для скачивания ...");
                         Logging.writeToFile(deviceId, "access", "Ожидаем подключения для скачивания ...");
 
-                        client1 = s1.accept();
+                        try {
+                            sendFileClient = s1.accept();
+                        } catch (IOException e) {
+                            System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+//                            countErrorConnection++;
 
-                        System.out.println(deviceId + ": Клиент для скачивания подключился, отправляем: " + newFile);
-                        Logging.writeToFile(deviceId, "access", "Клиент для скачивания подключился, отправляем: " + newFile);
+                            if(++countErrorConnection >= Root.MAX_ERROR_CONNECT) {
+                                System.out.println(deviceId + ": ИСЧЕРАПАН ЛИМИТ ПОДКЛЮЧЕНИЙ, ОТКЛЮЧАЕМСЯ");
+                                break;
+                            }
 
-                        FileInputStream fis = new FileInputStream(fileName);
-                        BufferedInputStream bis = new BufferedInputStream(fis);
-                        DataOutputStream dos = new DataOutputStream(client1.getOutputStream());
-
-                        byte[] buffer = new byte[32 * 1024];
-                        int count, total = 0;
-
-                        while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
-                            total += count;
-                            dos.write(buffer, 0, count);
-                            dos.flush();
+//                        } finally {
+//                            if(countErrorConnection >= Root.MAX_ERROR_CONNECT) {
+//                                break;
+//                            }
                         }
 
-                        System.out.println(deviceId + ": Файл " + newFile + " передан");
-                        Logging.writeToFile(deviceId, "access", "Файл " + newFile + " передан");
+                        if(sendFileClient != null) {
 
-                        fis.close();
-                        bis.close();
-                        dos.close();
+                            try(FileInputStream fis = new FileInputStream(fileName);
+                                BufferedInputStream bis = new BufferedInputStream(fis);
+                                DataOutputStream dos = new DataOutputStream(sendFileClient.getOutputStream())) {
 
-                        client1.close();
+                                System.out.println(deviceId + ": Клиент для скачивания подключился, отправляем: " + newFile);
+                                Logging.writeToFile(deviceId, "access", "Клиент для скачивания подключился, отправляем: " + newFile);
 
-                        fileName.delete();
+//                                FileInputStream fis = new FileInputStream(fileName);
+//                                BufferedInputStream bis = new BufferedInputStream(fis);
+//                                DataOutputStream dos = new DataOutputStream(sendFileClient.getOutputStream());
 
-                        System.out.println(deviceId + ": Клиент для скачивания отключился");
-                        Logging.writeToFile(deviceId, "access", "Клиент для скачивания отключился");
+                                byte[] buffer = new byte[32 * 1024];
+                                int count, total = 0;
+
+                                while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
+                                    total += count;
+                                    dos.write(buffer, 0, count);
+                                    dos.flush();
+                                }
+
+                                System.out.println(deviceId + ": Файл " + newFile + " передан");
+                                Logging.writeToFile(deviceId, "access", "Файл " + newFile + " передан");
+
+                            } catch (IOException e) {
+                                System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                            } finally {
+                                sendFileClient.close();
+
+                                if(!fileName.delete()) {
+                                    System.out.println(deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
+                                }
+
+                                System.out.println(deviceId + ": Клиент для скачивания отключился");
+                                Logging.writeToFile(deviceId, "access", "Клиент для скачивания отключился");
+                            }
+
+//                            fis.close();
+//                            bis.close();
+//                            dos.close();
+
+//                            sendFileClient.close();
+
+//                            fileName.delete();
+//
+//                            System.out.println(deviceId + ": Клиент для скачивания отключился");
+//                            Logging.writeToFile(deviceId, "access", "Клиент для скачивания отключился");
+
+                        }
 
                     }
 
@@ -285,8 +340,8 @@ class ClientConnect
 
         finally {
             try {
-                client.close();
-                System.out.println(deviceId + ": Соединение закрыто. client.close()");
+                connectClient.close();
+                System.out.println(deviceId + ": Соединение закрыто. connectClient.close()");
                 Logging.writeToFile(deviceId, "access", "Соединение закрыто");
             } catch (IOException e) {
                 e.printStackTrace();

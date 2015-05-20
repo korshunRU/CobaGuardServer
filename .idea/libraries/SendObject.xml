@@ -1,8 +1,6 @@
 <component name="libraryTable">
   <library name="SendObject">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../SendObject/out/artifacts/SendObject/SendObject.jar!/" />
-    </CLASSES>
+    <CLASSES />
     <JAVADOC />
     <SOURCES />
   </library>
