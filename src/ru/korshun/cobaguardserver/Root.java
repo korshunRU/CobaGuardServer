@@ -279,6 +279,8 @@ class ClientConnect
 
                         if(sendFileClient != null) {
 
+                            countErrorConnection =                  0;
+
                             try(FileInputStream fis = new FileInputStream(fileName);
                                 BufferedInputStream bis = new BufferedInputStream(fis);
                                 DataOutputStream dos = new DataOutputStream(sendFileClient.getOutputStream())) {
