@@ -132,6 +132,10 @@ class ClientConnect
     private String deviceId;
     private int filesCount;
 
+
+    private final String OBJECT_PART_DIVIDER =              "-";
+
+
     public ClientConnect(ServerSocket s1, Socket ConnectClient) {
         this.s1 = s1;
         this.connectClient = ConnectClient;
@@ -229,6 +233,62 @@ class ClientConnect
                 }
 
 
+
+
+                //Клиент сделал запрос на скачивание конкретного файла
+                if (query.startsWith("getFile")) {
+
+                    String lastUpdateDate[] =                       query.split(":");
+                    String objectNumber =                           lastUpdateDate[1];
+                    deviceId =                                      lastUpdateDate[2];
+
+                    System.out.println(deviceId + ": запрашивается объект " + objectNumber);
+
+                    Logging.writeToFile(deviceId, "access", "Сессия открыта");
+                    Logging.writeToFile(deviceId, "access", "Запрашивается объект " + objectNumber);
+
+                    File cobaPath =                                 new File(Root.COBA_PATH_NAME);
+                    File[] countFiles =                             cobaPath.listFiles();
+
+                    if (cobaPath.isDirectory() && countFiles != null) {
+
+                        for (File file : countFiles) {
+
+                            if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER)) {
+
+//                                int startDivider = file.getName().indexOf(OBJECT_PART_DIVIDER);
+//                                int finishDivider = file.getName().lastIndexOf(".");
+//
+//                                String fileNameIndex = file.getName().substring(0, file.getName().indexOf(OBJECT_PART_DIVIDER));
+
+                                if (objectEquals(objectNumber, file.getName())) {
+//                                if ((Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
+
+                                    listNewFiles.add(file.getName());
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    System.out.println(deviceId + ": Файлов " + listNewFiles.size());
+                    Logging.writeToFile(deviceId, "access", "Файлов " + listNewFiles.size());
+
+                    out.println(listNewFiles.size());
+                    out.flush();
+
+                    filesCount = listNewFiles.size();
+
+                    continue;
+
+                }
+
+
+
+
                 //Клиент сделал запрос на скачивание
                 if (query.equals("download") & filesCount > 0) {
 
@@ -295,10 +355,10 @@ class ClientConnect
 //                                DataOutputStream dos = new DataOutputStream(sendFileClient.getOutputStream());
 
                                 byte[] buffer = new byte[32 * 1024];
-                                int count, total = 0;
+                                int count;
 
                                 while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
-                                    total += count;
+//                                    total += count;
                                     dos.write(buffer, 0, count);
                                     dos.flush();
                                 }
@@ -362,5 +422,51 @@ class ClientConnect
         }
 
     }
+
+
+
+
+    /*  Проверяем, есть ли файл для пришедшего в смс номера объекта  */
+    private boolean objectEquals(String objectNumber, String fileName) {
+
+        String fileNameSplit[] = fileName.substring(0, fileName.lastIndexOf(OBJECT_PART_DIVIDER)).split(",");
+
+        if (fileNameSplit.length > 1) {
+
+            for (String fn : fileNameSplit) {
+
+                if (isInteger(fn) && fn.equals(objectNumber)) {
+
+                    return true;
+
+                }
+
+            }
+
+        }
+
+        else {
+
+            if (isInteger(fileNameSplit[0]) && fileNameSplit[0].equals(objectNumber)) {
+                return true;
+            }
+
+        }
+
+        return false;
+    }
+
+
+    /*  Проверяем, является ли строка целым числом
+*           Думаю, не нужно объяснять для чего  */
+    private boolean isInteger(String str) {
+        try {
+            Integer.parseInt(str);
+        } catch(NumberFormatException e) {
+            return false;
+        }
+        return true;
+    }
+
 
 }
