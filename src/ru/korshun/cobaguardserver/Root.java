@@ -350,6 +350,7 @@ class ClientConnect
         }
 
         finally {
+
             try {
                 connectClient.close();
                 System.out.println(deviceId + ": Соединение закрыто. connectClient.close()");
