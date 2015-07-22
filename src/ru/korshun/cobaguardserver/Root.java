@@ -238,9 +238,9 @@ class ClientConnect
                 //Клиент сделал запрос на скачивание конкретного файла
                 if (query.startsWith("getFile")) {
 
-                    String lastUpdateDate[] =                       query.split(":");
-                    String objectNumber =                           lastUpdateDate[1];
-                    deviceId =                                      lastUpdateDate[2];
+                    String objectNumberStr[] =                      query.split(":");
+                    String objectNumber =                           objectNumberStr[1];
+                    deviceId =                                      objectNumberStr[2];
 
                     System.out.println(deviceId + ": запрашивается объект " + objectNumber);
 
