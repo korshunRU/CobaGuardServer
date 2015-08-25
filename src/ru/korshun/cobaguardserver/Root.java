@@ -162,6 +162,27 @@ class ClientConnect
 
 
 
+    /**
+     *  Конструктор класса
+     * @param serverFile                    - Ссылка на сокет, который открывается для передачи файлов
+     * @param ConnectClient                 - Ссылка на сокет, который открывается для обработки запросов от клиента
+     */
+    public ClientConnect(ServerSocket serverFile, Socket ConnectClient) {
+        this.serverFile =                                   serverFile;
+        this.connectClient =                                ConnectClient;
+
+        System.out.println("Сессия для " + ConnectClient + " открыта");
+    }
+
+
+
+
+
+
+
+
+
+
 
 
     /**
@@ -205,6 +226,12 @@ class ClientConnect
 
 
 
+
+
+
+
+
+
     /**
      *  Функция проверяет, является ли строка целым числом
      * @param str                           - строка для проверки
@@ -225,17 +252,8 @@ class ClientConnect
 
 
 
-    /**
-     *  Конструктор класса
-     * @param serverFile                    - Ссылка на сокет, который открывается для передачи файлов
-     * @param ConnectClient                 - Ссылка на сокет, который открывается для обработки запросов от клиента
-     */
-    public ClientConnect(ServerSocket serverFile, Socket ConnectClient) {
-        this.serverFile =                                   serverFile;
-        this.connectClient =                                ConnectClient;
 
-        System.out.println("Сессия для " + ConnectClient + " открыта");
-    }
+
 
 
 
@@ -248,7 +266,7 @@ class ClientConnect
      *  Функция завершает сеанс работы с клиентом, закрывает Writer и выходит из цикла
      * @param out                           - ссылка на PrintWriter
      */
-    private void clientDissconnect(PrintWriter out) {
+    private void sendDissconnectMessage(PrintWriter out) {
         out.println("close");
         out.flush();
 
@@ -259,6 +277,8 @@ class ClientConnect
         Logging.writeToFile(deviceId, "access", "Обновление завершено, " +
                 "клиент отключился \r\n\r\n====================================================================================== \r\n");
     }
+
+
 
 
 
@@ -313,6 +333,8 @@ class ClientConnect
 
         return listNewFiles;
     }
+
+
 
 
 
@@ -478,6 +500,10 @@ class ClientConnect
 
 
 
+
+
+
+
     @Override
     public void run() {
 
@@ -489,6 +515,11 @@ class ClientConnect
             ArrayList<String> listNewFiles =                new ArrayList<>();
 
             String query;
+
+
+
+
+
 
             while (true) {
 
@@ -521,8 +552,7 @@ class ClientConnect
 
                 //Клиент отсоединился
                 if (query.equals("disconnect")) {
-                    clientDissconnect(out);
-
+                    sendDissconnectMessage(out);
                     break;
                 }
 
@@ -603,6 +633,9 @@ class ClientConnect
                 Logging.writeToFile("error", e.getMessage());
             }
         }
+
+
+
 
     }
 
