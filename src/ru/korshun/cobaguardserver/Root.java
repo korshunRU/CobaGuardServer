@@ -26,6 +26,11 @@ public class Root {
 
 
 
+
+
+    /**
+     *  Конструктор класса
+     */
     private Root() {
         readFile();
         setParams();
@@ -38,13 +43,18 @@ public class Root {
 
 
 
+
+
+    /**
+     *  Функция считывает файл конфига и создает коллекцию с параметрами
+     */
     private void readFile(){
         String line;
-        try(BufferedReader br = new BufferedReader(new FileReader(CONFIG_FILE))) {
+        try(BufferedReader br =                             new BufferedReader(new FileReader(CONFIG_FILE))) {
             while((line = br.readLine()) != null){
 
                 if(line.length() > 0 && !line.startsWith("#") && line.contains("=")) {
-                    String parts[] = line.split("=");
+                    String parts[] =                        line.split("=");
                     params.put(parts[0], parts[1]);
                 }
 
@@ -58,15 +68,27 @@ public class Root {
 
 
 
+
+
+
+    /**
+     *  Функция присваивает переменным парамерты, считанные из файла конфига
+     */
     private void setParams() {
-        PORT =                      Integer.parseInt(params.get("CONNECT_PORT"));
-        PORT_FILES =                Integer.parseInt(params.get("DOWNLOAD_PORT"));
-        ACCEPT_TIMEOUT =            Integer.parseInt(params.get("ACCEPT_TIMEOUT"));
-        COBA_PATH_NAME =            params.get("IMG_PATH");
+        PORT =                                              Integer.parseInt(params.get("CONNECT_PORT"));
+        PORT_FILES =                                        Integer.parseInt(params.get("DOWNLOAD_PORT"));
+        ACCEPT_TIMEOUT =                                    Integer.parseInt(params.get("ACCEPT_TIMEOUT"));
+        COBA_PATH_NAME =                                    params.get("IMG_PATH");
     }
 
 
 
+
+
+
+    /**
+     * Функция создает "слушателя" для обработки подключающихся клиентов
+     */
     private void serverStart() {
 
         ServerSocket socketConnect = null, socketSendFile = null;
@@ -75,14 +97,13 @@ public class Root {
 
             socketConnect =                                 new ServerSocket(PORT);
             socketSendFile =                                new ServerSocket(PORT_FILES);
-            socketSendFile
-                    .setSoTimeout(ACCEPT_TIMEOUT * 1000);
+            socketSendFile.setSoTimeout(ACCEPT_TIMEOUT * 1000);
 
             System.out.println("Сервер запущен");
 
             while (true) {
 
-                Socket socketClientConnect = socketConnect.accept();
+                Socket socketClientConnect =                socketConnect.accept();
 
 //                new ClientConnect(socketSendFile, socketClientConnect).start();
 
@@ -122,12 +143,13 @@ public class Root {
 }
 
 
-
-
+/**
+ *  Вложенный класс, занимающийся непосредственно работой с подключившимся клиентом
+ */
 class ClientConnect
     implements Runnable {
 
-    private ServerSocket s1;
+    private ServerSocket serverFile;
     private Socket connectClient;
     private String deviceId;
     private int filesCount;
@@ -136,12 +158,103 @@ class ClientConnect
     private final String OBJECT_PART_DIVIDER =              "-";
 
 
-    public ClientConnect(ServerSocket s1, Socket ConnectClient) {
-        this.s1 = s1;
-        this.connectClient = ConnectClient;
+
+
+
+
+    /**
+     *  Конструктор класса
+     * @param serverFile                    - Ссылка на сокет, который открывается для передачи файлов
+     * @param ConnectClient                 - Ссылка на сокет, который открывается для обработки запросов от клиента
+     */
+    public ClientConnect(ServerSocket serverFile, Socket ConnectClient) {
+        this.serverFile =                                   serverFile;
+        this.connectClient =                                ConnectClient;
 
         System.out.println("Сессия для " + ConnectClient + " открыта");
     }
+
+
+
+
+
+
+
+
+    /**
+     *  Функция завершает сеанс работы с клиентом, закрывает Writer и выходит из цикла
+     * @param out
+     */
+    private void clientDissconnect(PrintWriter out) {
+        out.println("close");
+        out.flush();
+
+        System.out.println(deviceId + ": Обновление завершено, клиент отключился");
+
+        Logging.writeToFile("access", "Обновление завершено, клиент " + this.connectClient +
+                " отключился \r\n\r\n====================================================================================== \r\n");
+        Logging.writeToFile(deviceId, "access", "Обновление завершено, " +
+                "клиент отключился \r\n\r\n====================================================================================== \r\n");
+    }
+
+
+
+
+
+
+
+
+
+    /**
+     *  Функция выбирает файлы, которые созданы после даты обновления, переданной с устройства
+     * @param query                             - ссылка на строку запроса
+     * @param out                               - ссылка на PrintWriter
+     * @return                                  - возвращается коллекция типа ArrayList
+     */
+    private ArrayList<String> getNewFiles(String query, PrintWriter out) {
+        ArrayList<String> listNewFiles =                    new ArrayList<>();
+
+        String lastUpdateDate[] =                           query.split(":");
+        deviceId =                                          lastUpdateDate[2];
+        System.out.println(deviceId + ": запрашивается количество новых файлов");
+
+        Logging.writeToFile(deviceId, "access", "Сессия открыта");
+        Logging.writeToFile(deviceId, "access", "Запрашивается количество новых файлов");
+
+        File cobaPath =                                     new File(Root.COBA_PATH_NAME);
+        File[] countFiles =                                 cobaPath.listFiles();
+
+        if (cobaPath.isDirectory() && countFiles != null) {
+
+            for (File file : countFiles) {
+
+                if (file.isFile()) {
+
+                    if ((Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
+
+                        listNewFiles.add(file.getName());
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+        System.out.println(deviceId + ": Новых файлов " + listNewFiles.size());
+        Logging.writeToFile(deviceId, "access", "Новых файлов " + listNewFiles.size());
+
+        out.println(listNewFiles.size());
+        out.flush();
+
+        return listNewFiles;
+    }
+
+
+
+
 
     @Override
     public void run() {
@@ -151,15 +264,20 @@ class ClientConnect
                 PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(connectClient.getOutputStream())), true)
         ) {
 
-            ArrayList<String> listNewFiles = new ArrayList<>();
+            ArrayList<String> listNewFiles =                new ArrayList<>();
 
             String query;
 
             while (true) {
 
-                TimeUnit.MILLISECONDS.sleep(1000);
+                //TimeUnit.MILLISECONDS.sleep(1000);
 
-                query = in.readLine();
+                query =                                     in.readLine();
+
+
+
+
+
 
 
 
@@ -171,17 +289,13 @@ class ClientConnect
 
 
 
+
+
+
+
                 //Клиент отсоединился
                 if (query.equals("disconnect")) {
-                    out.println("close");
-                    out.flush();
-
-                    System.out.println(deviceId + ": Обновление завершено, клиент отключился");
-
-                    Logging.writeToFile("access", "Обновление завершено, клиент " + this.connectClient +
-                            " отключился \r\n\r\n====================================================================================== \r\n");
-                    Logging.writeToFile(deviceId, "access", "Обновление завершено, " +
-                            "клиент отключился \r\n\r\n====================================================================================== \r\n");
+                    clientDissconnect(out);
 
                     break;
                 }
@@ -189,48 +303,23 @@ class ClientConnect
 
 
 
+
+
+
+
                 //Клиент сделал запрос на кол-во новых файлов
                 if (query.startsWith("getFilesNew")) {
-
-                    String lastUpdateDate[] = query.split(":");
-                    deviceId = lastUpdateDate[2];
-                    System.out.println(deviceId + ": запрашивается количество новых файлов");
-
-                    Logging.writeToFile(deviceId, "access", "Сессия открыта");
-                    Logging.writeToFile(deviceId, "access", "Запрашивается количество новых файлов");
-
-                    File cobaPath =                             new File(Root.COBA_PATH_NAME);
-                    File[] countFiles =                         cobaPath.listFiles();
-
-                    if (cobaPath.isDirectory() && countFiles != null) {
-
-                        for (File file : countFiles) {
-
-                            if (file.isFile()) {
-
-                                if ((Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
-
-                                    listNewFiles.add(file.getName());
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                    System.out.println(deviceId + ": Новых файлов " + listNewFiles.size());
-                    Logging.writeToFile(deviceId, "access", "Новых файлов " + listNewFiles.size());
-
-                    out.println(listNewFiles.size());
-                    out.flush();
+                    listNewFiles = getNewFiles(query, out);
 
                     filesCount = listNewFiles.size();
 
                     continue;
-
                 }
+
+
+
+
+
 
 
 
@@ -322,7 +411,7 @@ class ClientConnect
                         Socket sendFileClient =                     null;
 
                         try {
-                            sendFileClient = s1.accept();
+                            sendFileClient = serverFile.accept();
                         } catch (IOException e) {
                             System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
 //                            countErrorConnection++;
@@ -404,7 +493,7 @@ class ClientConnect
 
             }
 
-        } catch (InterruptedException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             Logging.writeToFile("error", e.getMessage());
         }
