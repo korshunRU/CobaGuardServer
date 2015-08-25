@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-
 
 public class Root {
 
@@ -105,8 +103,6 @@ public class Root {
 
                 Socket socketClientConnect =                socketConnect.accept();
 
-//                new ClientConnect(socketSendFile, socketClientConnect).start();
-
                 executorService.submit(new ClientConnect(socketSendFile, socketClientConnect));
 
                 System.out.println("Клиент подключился: " + socketClientConnect);
@@ -141,6 +137,9 @@ public class Root {
     }
 
 }
+
+
+
 
 
 /**
