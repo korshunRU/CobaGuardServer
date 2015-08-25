@@ -162,6 +162,70 @@ class ClientConnect
 
 
 
+
+
+
+    /**
+     *  Функция сравнивает имя файла с номером объекта
+     * @param objectNumber                  - номер объекта
+     * @param fileName                      - файл
+     * @return                              - в случае, если файл на нужный объект, возвращается TRUE
+     */
+    private boolean objectEquals(String objectNumber, String fileName) {
+
+        String fileNameSplit[] = fileName.substring(0, fileName.lastIndexOf(OBJECT_PART_DIVIDER)).split(",");
+
+        if (fileNameSplit.length > 1) {
+
+            for (String fn : fileNameSplit) {
+
+                if (isInteger(fn) && fn.equals(objectNumber)) {
+
+                    return true;
+
+                }
+
+            }
+
+        }
+
+        else {
+
+            if (isInteger(fileNameSplit[0]) && fileNameSplit[0].equals(objectNumber)) {
+                return true;
+            }
+
+        }
+
+        return false;
+    }
+
+
+
+
+
+
+
+    /**
+     *  Функция проверяет, является ли строка целым числом
+     * @param str                           - строка для проверки
+     * @return                              - в случае, если строка является числом, возвращается TRUE
+     */
+    private boolean isInteger(String str) {
+        try {
+            Integer.parseInt(str);
+        } catch(NumberFormatException e) {
+            return false;
+        }
+        return true;
+    }
+
+
+
+
+
+
+
     /**
      *  Конструктор класса
      * @param serverFile                    - Ссылка на сокет, который открывается для передачи файлов
@@ -183,7 +247,7 @@ class ClientConnect
 
     /**
      *  Функция завершает сеанс работы с клиентом, закрывает Writer и выходит из цикла
-     * @param out
+     * @param out                           - ссылка на PrintWriter
      */
     private void clientDissconnect(PrintWriter out) {
         out.println("close");
@@ -207,9 +271,9 @@ class ClientConnect
 
     /**
      *  Функция выбирает файлы, которые созданы после даты обновления, переданной с устройства
-     * @param query                             - ссылка на строку запроса
-     * @param out                               - ссылка на PrintWriter
-     * @return                                  - возвращается коллекция типа ArrayList
+     * @param query                         - ссылка на строку запроса
+     * @param out                           - ссылка на PrintWriter
+     * @return                              - возвращается коллекция типа ArrayList
      */
     private ArrayList<String> getNewFiles(String query, PrintWriter out) {
         ArrayList<String> listNewFiles =                    new ArrayList<>();
@@ -242,7 +306,6 @@ class ClientConnect
 
         }
 
-
         System.out.println(deviceId + ": Новых файлов " + listNewFiles.size());
         Logging.writeToFile(deviceId, "access", "Новых файлов " + listNewFiles.size());
 
@@ -251,6 +314,166 @@ class ClientConnect
 
         return listNewFiles;
     }
+
+
+
+
+
+
+
+
+    /**
+     *  Функция выбирает файлы на один конкретнный объект, переданный в строке запроса
+     * @param query                             - ссылка на строку запроса
+     * @param out                               - ссылка на PrintWriter
+     * @return                                  - возвращается коллекция типа ArrayList
+     */
+    private ArrayList<String> getFile(String query, PrintWriter out) {
+        ArrayList<String> listNewFiles =                    new ArrayList<>();
+
+        String objectNumberStr[] =                          query.split(":");
+        String objectNumber =                               objectNumberStr[1];
+        deviceId =                                          objectNumberStr[2];
+
+        System.out.println(deviceId + ": запрашивается объект " + objectNumber);
+
+        Logging.writeToFile(deviceId, "access", "Сессия открыта");
+        Logging.writeToFile(deviceId, "access", "Запрашивается объект " + objectNumber);
+
+        File cobaPath =                                     new File(Root.COBA_PATH_NAME);
+        File[] countFiles =                                 cobaPath.listFiles();
+
+        if (cobaPath.isDirectory() && countFiles != null) {
+
+            for (File file : countFiles) {
+
+                if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER)) {
+
+                    if (objectEquals(objectNumber, file.getName())) {
+
+                        listNewFiles.add(file.getName());
+
+                    }
+
+                }
+
+            }
+
+        }
+
+        System.out.println(deviceId + ": Файлов " + listNewFiles.size());
+        Logging.writeToFile(deviceId, "access", "Файлов " + listNewFiles.size());
+
+        out.println(listNewFiles.size());
+        out.flush();
+
+        return listNewFiles;
+    }
+
+
+
+
+
+
+
+
+
+
+    /**
+     *  Функция перебирает файлы из входной коллекции и отправляет их получателю
+     * @param listNewFiles                      - ссылка на коллекцию со списком файлов для отправки
+     * @param out                               - ссылка на PrintWriter
+     * @return                                  - если все прошло без ошибок, возвращается TRUE
+     */
+    private boolean downloadFiles(ArrayList<String> listNewFiles, PrintWriter out) {
+        System.out.println(deviceId + ": Получен запрос на скачивание");
+        Logging.writeToFile(deviceId, "access", "Получен запрос на скачивание");
+
+        int countErrorConnection =                          0;
+        boolean downloadComplite =                          true;
+
+        for (String newFile : listNewFiles) {
+
+            String tmpPath =                                Root.COBA_PATH_NAME + File.separator + deviceId;
+            File fileName =                                 new File(tmpPath + File.separator + newFile);
+
+            Logging.writeToFile(deviceId, "access", "Шифруем: " + newFile);
+
+            ImgEncode
+                    .getInstance(newFile, Root.COBA_PATH_NAME, tmpPath)
+                    .encodeImg();
+
+            out.println(newFile);
+            out.flush();
+
+            out.println(fileName.length());
+            out.flush();
+
+            System.out.println(deviceId + ": Ожидаем подключения для скачивания ...");
+            Logging.writeToFile(deviceId, "access", "Ожидаем подключения для скачивания ...");
+
+            Socket sendFileClient =                         null;
+
+            try {
+                sendFileClient =                            serverFile.accept();
+            } catch (IOException e) {
+                System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+
+                if(++countErrorConnection >= Root.MAX_ERROR_CONNECT) {
+                    System.out.println(deviceId + ": ИСЧЕРАПАН ЛИМИТ ПОДКЛЮЧЕНИЙ, ОТКЛЮЧАЕМСЯ");
+                    downloadComplite =                      false;
+                    break;
+                }
+
+            }
+
+            if(sendFileClient != null) {
+
+                countErrorConnection =                      0;
+
+                try(FileInputStream fis =                   new FileInputStream(fileName);
+                    BufferedInputStream bis =               new BufferedInputStream(fis);
+                    DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream())) {
+
+                    System.out.println(deviceId + ": Клиент для скачивания подключился, отправляем: " + newFile);
+                    Logging.writeToFile(deviceId, "access", "Клиент для скачивания подключился, отправляем: " + newFile);
+
+                    byte[] buffer =                         new byte[32 * 1024];
+                    int count;
+
+                    while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
+                        dos.write(buffer, 0, count);
+                        dos.flush();
+                    }
+
+                    System.out.println(deviceId + ": Файл " + newFile + " передан");
+                    Logging.writeToFile(deviceId, "access", "Файл " + newFile + " передан");
+
+                } catch (IOException e) {
+                    System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                } finally {
+                    try {
+                        sendFileClient.close();
+                    } catch (IOException e) {
+                        System.out.println(deviceId + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
+                    }
+
+                    if(!fileName.delete()) {
+                        System.out.println(deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
+                    }
+
+                    System.out.println(deviceId + ": Клиент для скачивания отключился");
+                    Logging.writeToFile(deviceId, "access", "Клиент для скачивания отключился");
+                }
+
+            }
+
+        }
+
+        return downloadComplite;
+
+    }
+
 
 
 
@@ -281,10 +504,14 @@ class ClientConnect
 
 
 
+
+
                 if(query == null) {
                     System.out.println("query == null   ------   DISCONNECT");
                     break;
                 }
+
+
 
 
 
@@ -299,6 +526,8 @@ class ClientConnect
 
                     break;
                 }
+
+
 
 
 
@@ -324,171 +553,37 @@ class ClientConnect
 
 
 
+
                 //Клиент сделал запрос на скачивание конкретного файла
                 if (query.startsWith("getFile")) {
-
-                    String objectNumberStr[] =                      query.split(":");
-                    String objectNumber =                           objectNumberStr[1];
-                    deviceId =                                      objectNumberStr[2];
-
-                    System.out.println(deviceId + ": запрашивается объект " + objectNumber);
-
-                    Logging.writeToFile(deviceId, "access", "Сессия открыта");
-                    Logging.writeToFile(deviceId, "access", "Запрашивается объект " + objectNumber);
-
-                    File cobaPath =                                 new File(Root.COBA_PATH_NAME);
-                    File[] countFiles =                             cobaPath.listFiles();
-
-                    if (cobaPath.isDirectory() && countFiles != null) {
-
-                        for (File file : countFiles) {
-
-                            if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER)) {
-
-//                                int startDivider = file.getName().indexOf(OBJECT_PART_DIVIDER);
-//                                int finishDivider = file.getName().lastIndexOf(".");
-//
-//                                String fileNameIndex = file.getName().substring(0, file.getName().indexOf(OBJECT_PART_DIVIDER));
-
-                                if (objectEquals(objectNumber, file.getName())) {
-//                                if ((Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
-
-                                    listNewFiles.add(file.getName());
-
-                                }
-
-                            }
-
-                        }
-
-                    }
-
-                    System.out.println(deviceId + ": Файлов " + listNewFiles.size());
-                    Logging.writeToFile(deviceId, "access", "Файлов " + listNewFiles.size());
-
-                    out.println(listNewFiles.size());
-                    out.flush();
+                    listNewFiles = getFile(query, out);
 
                     filesCount = listNewFiles.size();
 
                     continue;
-
                 }
+
+
+
+
+
+
 
 
 
 
                 //Клиент сделал запрос на скачивание
-                if (query.equals("download") & filesCount > 0) {
-
-                    System.out.println(deviceId + ": Получен запрос на скачивание");
-                    Logging.writeToFile(deviceId, "access", "Получен запрос на скачивание");
-
-//                    Socket sendFileClient =             null;
-                    int countErrorConnection =          0;
-                    boolean isLimitErrorConnection =    false;
-
-                    for (String newFile : listNewFiles) {
-
-                        String tmpPath = Root.COBA_PATH_NAME + File.separator + deviceId;
-                        File fileName = new File(tmpPath + File.separator + newFile);
-
-                        Logging.writeToFile(deviceId, "access", "Шифруем: " + newFile);
-
-                        ImgEncode
-                                .getInstance(newFile, Root.COBA_PATH_NAME, tmpPath)
-                                .encodeImg();
-
-                        out.println(newFile);
-                        out.flush();
-
-                        out.println(fileName.length());
-                        out.flush();
-
-                        System.out.println(deviceId + ": Ожидаем подключения для скачивания ...");
-                        Logging.writeToFile(deviceId, "access", "Ожидаем подключения для скачивания ...");
-
-                        Socket sendFileClient =                     null;
-
-                        try {
-                            sendFileClient = serverFile.accept();
-                        } catch (IOException e) {
-                            System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
-//                            countErrorConnection++;
-
-                            if(++countErrorConnection >= Root.MAX_ERROR_CONNECT) {
-                                System.out.println(deviceId + ": ИСЧЕРАПАН ЛИМИТ ПОДКЛЮЧЕНИЙ, ОТКЛЮЧАЕМСЯ");
-                                isLimitErrorConnection =            true;
-                                break;
-                            }
-
-//                        } finally {
-//                            if(countErrorConnection >= Root.MAX_ERROR_CONNECT) {
-//                                break;
-//                            }
-                        }
-
-                        if(sendFileClient != null) {
-
-                            countErrorConnection =                  0;
-
-                            try(FileInputStream fis = new FileInputStream(fileName);
-                                BufferedInputStream bis = new BufferedInputStream(fis);
-                                DataOutputStream dos = new DataOutputStream(sendFileClient.getOutputStream())) {
-
-                                System.out.println(deviceId + ": Клиент для скачивания подключился, отправляем: " + newFile);
-                                Logging.writeToFile(deviceId, "access", "Клиент для скачивания подключился, отправляем: " + newFile);
-
-//                                FileInputStream fis = new FileInputStream(fileName);
-//                                BufferedInputStream bis = new BufferedInputStream(fis);
-//                                DataOutputStream dos = new DataOutputStream(sendFileClient.getOutputStream());
-
-                                byte[] buffer = new byte[32 * 1024];
-                                int count;
-
-                                while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
-//                                    total += count;
-                                    dos.write(buffer, 0, count);
-                                    dos.flush();
-                                }
-
-                                System.out.println(deviceId + ": Файл " + newFile + " передан");
-                                Logging.writeToFile(deviceId, "access", "Файл " + newFile + " передан");
-
-                            } catch (IOException e) {
-                                System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
-                            } finally {
-                                sendFileClient.close();
-//                                sendFileClient =                            null;
-
-                                if(!fileName.delete()) {
-                                    System.out.println(deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
-                                }
-
-                                System.out.println(deviceId + ": Клиент для скачивания отключился");
-                                Logging.writeToFile(deviceId, "access", "Клиент для скачивания отключился");
-                            }
-
-//                            fis.close();
-//                            bis.close();
-//                            dos.close();
-
-//                            sendFileClient.close();
-
-//                            fileName.delete();
-//
-//                            System.out.println(deviceId + ": Клиент для скачивания отключился");
-//                            Logging.writeToFile(deviceId, "access", "Клиент для скачивания отключился");
-
-                        }
-
-                    }
-
-                    if(isLimitErrorConnection) {
+                if (query.equals("download") && filesCount > 0) {
+                    if(!downloadFiles(listNewFiles, out)) {
                         break;
                     }
-
                 }
+
+
+
+
+
+
 
 
             }
@@ -510,51 +605,6 @@ class ClientConnect
             }
         }
 
-    }
-
-
-
-
-    /*  Проверяем, есть ли файл для пришедшего в смс номера объекта  */
-    private boolean objectEquals(String objectNumber, String fileName) {
-
-        String fileNameSplit[] = fileName.substring(0, fileName.lastIndexOf(OBJECT_PART_DIVIDER)).split(",");
-
-        if (fileNameSplit.length > 1) {
-
-            for (String fn : fileNameSplit) {
-
-                if (isInteger(fn) && fn.equals(objectNumber)) {
-
-                    return true;
-
-                }
-
-            }
-
-        }
-
-        else {
-
-            if (isInteger(fileNameSplit[0]) && fileNameSplit[0].equals(objectNumber)) {
-                return true;
-            }
-
-        }
-
-        return false;
-    }
-
-
-    /*  Проверяем, является ли строка целым числом
-*           Думаю, не нужно объяснять для чего  */
-    private boolean isInteger(String str) {
-        try {
-            Integer.parseInt(str);
-        } catch(NumberFormatException e) {
-            return false;
-        }
-        return true;
     }
 
 
