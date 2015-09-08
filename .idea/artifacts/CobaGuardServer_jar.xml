@@ -10,6 +10,7 @@
         <element id="dir-copy" path="$PROJECT_DIR$/img" />
       </element>
       <element id="directory" name="logs" />
+      <element id="directory" name="signals" />
     </root>
   </artifact>
 </component>

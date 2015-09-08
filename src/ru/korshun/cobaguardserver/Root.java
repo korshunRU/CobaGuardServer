@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -20,7 +21,16 @@ public class Root {
     protected static final int MAX_ERROR_CONNECT =          3;
 
     private final String CONFIG_FILE =                      "coba.conf";
+
+    protected static String SIGNALS_DIR =                   "signals";
+    protected static String SIGNALS_FILE =                  "get.txt";
+
     private HashMap<String, String> params =                new HashMap<>();
+
+
+    protected static final String[] IMEI_LIST =             new String[]{
+                                                                "356446052938789"
+                                                            };
 
 
 
@@ -171,8 +181,9 @@ class ClientConnect
     private String deviceId;
     private int filesCount;
 
-
     private final String OBJECT_PART_DIVIDER =              "-";
+
+    private final ArrayList<String> IMEI_LIST =             new ArrayList<>(Arrays.asList(Root.IMEI_LIST));
 
 
 
@@ -419,6 +430,149 @@ class ClientConnect
 
 
     /**
+     *  Функция обрабатывает запрос на файл с сигналами
+     * @param query                             - ссылка на строку запроса
+     * @param out                               - ссылка на PrintWriter
+     */
+    private void executeSignalQuery(String query, PrintWriter out) {
+        String objectNumberStr[] =                          query.split(":");
+        String objectNumber =                               objectNumberStr[1];
+        deviceId =                                          objectNumberStr[2];
+
+        System.out.println(deviceId + ": запрос " + objectNumber + " от " + deviceId);
+
+        // проверяем есть ли IMEI в списке
+        if(IMEI_LIST.contains(deviceId)) {
+
+            System.out.println(deviceId + ": IMEI " + deviceId + " найден");
+
+            // проверяем наличие папки для сигналов для конкретного IMEI
+
+            if(new File(Root.SIGNALS_DIR).isDirectory() || new File(Root.SIGNALS_DIR + File.separator + deviceId).mkdirs()) {
+
+                File queryFile = new File(Root.SIGNALS_DIR + File.separator + deviceId + File.separator + Root.SIGNALS_FILE);
+
+                try {
+
+                    // если файла txt в вышесозданной папке нет - создаем
+                    if(!queryFile.exists()) {
+                        queryFile.createNewFile();
+                    }
+
+                    File xlsFile = new File(Root.SIGNALS_DIR + File.separator + deviceId + File.separator + objectNumber + ".xls");
+                    FileWriter fileWriter = new FileWriter(queryFile);
+
+
+                    // если файл Excel c сигналами по запрошенному обхекту есть в папке - отсылаем его размер,
+                    // имя и ждем подключения для скачивания
+                    if(xlsFile.exists()) {
+                        fileWriter.write("0");
+                        System.out.println(deviceId + ": файл xls найден ");
+
+                        // отправляем размер файла
+                        out.println(xlsFile.length());
+                        out.flush();
+
+
+                        // отправляем имя файла
+                        out.println(xlsFile.getName());
+                        out.flush();
+
+
+                        Socket sendFileClient =                         null;
+
+                        try {
+                            sendFileClient =                            serverFile.accept();
+                        } catch (IOException e) {
+                            System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+                        }
+
+                        if(sendFileClient != null) {
+
+//                            countErrorConnection =                      0;
+
+                            try(FileInputStream fis =                   new FileInputStream(xlsFile);
+                                BufferedInputStream bis =               new BufferedInputStream(fis);
+                                DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream())) {
+
+                                System.out.println(deviceId + ": Отправляем файл с сигналами: " + xlsFile.getName());
+                                Logging.writeToFile(deviceId, "access", "Отправляем файл с сигналами: " + xlsFile.getName());
+
+                                byte[] buffer =                         new byte[32 * 1024];
+                                int count;
+
+                                while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
+                                    dos.write(buffer, 0, count);
+                                    dos.flush();
+                                }
+
+                                System.out.println(deviceId + ": Файл сигналов " + xlsFile.getName() + " передан");
+                                Logging.writeToFile(deviceId, "access", "Файл сигналов " + xlsFile.getName() + " передан");
+
+                            } catch (IOException e) {
+                                System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
+                            } finally {
+                                try {
+                                    sendFileClient.close();
+                                } catch (IOException e) {
+                                    System.out.println(deviceId + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
+                                }
+
+                                if(!xlsFile.delete()) {
+                                    System.out.println(deviceId + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
+                                }
+
+                                System.out.println(deviceId + ": Клиент для скачивания файла сигналов отключился");
+                                Logging.writeToFile(deviceId, "access", "Клиент для скачивания файла сигналов отключился");
+                            }
+
+                        }
+
+
+
+                    }
+
+
+                    // если файл Excel c сигналами по запрошенному обхекту отсутствует - отсылаем 0
+                    else {
+                        fileWriter.write(objectNumber);
+                        System.out.println(deviceId + ": файл xls отсутствует ");
+
+                        out.println(0);
+                        out.flush();
+                    }
+
+                    fileWriter.close();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+
+
+        // если IMEI не найден в списке, шлем обратно код ошибки
+        else {
+            System.out.println(deviceId + ": ОШИБКА АВТОРИЗАЦИИ IMEI");
+            Logging.writeToFile(deviceId, "access", "ОШИБКА АВТОРИЗАЦИИ IMEI");
+
+            out.println(-4);
+            out.flush();
+        }
+
+    }
+
+
+
+
+
+
+
+
+
+    /**
      *  Функция перебирает файлы из входной коллекции и отправляет их получателю
      * @param listNewFiles                      - ссылка на коллекцию со списком файлов для отправки
      * @param out                               - ссылка на PrintWriter
@@ -606,6 +760,21 @@ class ClientConnect
                     listNewFiles = getFile(query, out);
 
                     filesCount = listNewFiles.size();
+
+                    continue;
+                }
+
+
+
+
+
+
+
+
+                //Клиент сделал запрос по сигналам
+                if (query.startsWith("getSignalFile")) {
+
+                    executeSignalQuery(query, out);
 
                     continue;
                 }
