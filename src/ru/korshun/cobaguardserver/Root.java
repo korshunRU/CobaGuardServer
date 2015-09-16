@@ -699,15 +699,15 @@ class ClientConnect
 
 
 
+                query =                                     in.readLine();
+
+
+
                 // Если сработал таймер отсутствия запросов по сигналам - выходим из цикла
                 if(!signalsWait) {
                     break;
                 }
 
-
-
-
-                query =                                     in.readLine();
 
 
 
@@ -795,6 +795,7 @@ class ClientConnect
                             new TimerTask() {
                                 @Override
                                 public void run() {
+                                    System.out.println("TIME!");
                                     signalsWait =           false;
                                 }
                             },
