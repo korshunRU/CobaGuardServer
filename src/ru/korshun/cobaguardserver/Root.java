@@ -3,9 +3,7 @@ package ru.korshun.cobaguardserver;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -180,6 +178,8 @@ class ClientConnect
     private Socket connectClient;
     private String deviceId;
     private int filesCount;
+
+    private boolean signalsWait =                           true;
 
     private final String OBJECT_PART_DIVIDER =              "-";
 
@@ -697,6 +697,16 @@ class ClientConnect
 
                 //TimeUnit.MILLISECONDS.sleep(1000);
 
+
+
+                // Если сработал таймер отсутствия запросов по сигналам - выходим из цикла
+                if(!signalsWait) {
+                    break;
+                }
+
+
+
+
                 query =                                     in.readLine();
 
 
@@ -739,9 +749,9 @@ class ClientConnect
 
                 //Клиент сделал запрос на кол-во новых файлов
                 if (query.startsWith("getFilesNew")) {
-                    listNewFiles = getNewFiles(query, out);
+                    listNewFiles =                          getNewFiles(query, out);
 
-                    filesCount = listNewFiles.size();
+                    filesCount =                            listNewFiles.size();
 
                     continue;
                 }
@@ -757,9 +767,9 @@ class ClientConnect
 
                 //Клиент сделал запрос на скачивание конкретного файла
                 if (query.startsWith("getFile")) {
-                    listNewFiles = getFile(query, out);
+                    listNewFiles =                          getFile(query, out);
 
-                    filesCount = listNewFiles.size();
+                    filesCount =                            listNewFiles.size();
 
                     continue;
                 }
@@ -775,6 +785,21 @@ class ClientConnect
                 if (query.startsWith("getSignalFile")) {
 
                     executeSignalQuery(query, out);
+
+                    Timer signalsTimer =                    new Timer();
+
+
+                    //  Запускаем таймер
+                    // По истечение времени устанавливаем переменную в false, что бы выйти из цикла
+                    signalsTimer.schedule(
+                            new TimerTask() {
+                                @Override
+                                public void run() {
+                                    signalsWait =           false;
+                                }
+                            },
+                            30000
+                    );
 
                     continue;
                 }
