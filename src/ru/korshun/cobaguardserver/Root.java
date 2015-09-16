@@ -475,7 +475,7 @@ class ClientConnect
 
                     // если файл Excel c сигналами по запрошенному обхекту есть в папке - отсылаем его размер,
                     // имя и ждем подключения для скачивания
-                    if(xlsFile.exists()) {
+                    if(xlsFile.exists() && xlsFile.length() > 0) {
                         fileWriter.write("0");
                         System.out.println(deviceId + ": файл xls найден ");
 
