@@ -699,6 +699,7 @@ class ClientConnect
 
 
 
+
                 query =                                     in.readLine();
 
 
