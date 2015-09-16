@@ -448,7 +448,7 @@ class ClientConnect
 
             // проверяем наличие папки для сигналов для конкретного IMEI
 
-            if(new File(Root.SIGNALS_DIR).isDirectory() || new File(Root.SIGNALS_DIR + File.separator + deviceId).mkdirs()) {
+            if(new File(Root.SIGNALS_DIR).isDirectory() | new File(Root.SIGNALS_DIR + File.separator + deviceId).mkdirs()) {
 
                 File queryFile = new File(Root.SIGNALS_DIR + File.separator + deviceId + File.separator + Root.SIGNALS_FILE);
 
