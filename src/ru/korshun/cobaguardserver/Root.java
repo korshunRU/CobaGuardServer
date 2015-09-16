@@ -3,6 +3,8 @@ package ru.korshun.cobaguardserver;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -201,6 +203,12 @@ class ClientConnect
     public ClientConnect(ServerSocket serverFile, Socket ConnectClient) {
         this.serverFile =                                   serverFile;
         this.connectClient =                                ConnectClient;
+
+        try {
+            this.connectClient.setSoTimeout(25000);
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("Сессия для " + ConnectClient + " открыта");
     }
@@ -699,8 +707,12 @@ class ClientConnect
 
 
 
-                query =                                     in.readLine();
-
+                try {
+                    query =                                 in.readLine();
+                } catch (SocketTimeoutException e) {
+                    System.out.println(deviceId + ": Соединение закрыто по таймауту");
+                    break;
+                }
 
 
 
