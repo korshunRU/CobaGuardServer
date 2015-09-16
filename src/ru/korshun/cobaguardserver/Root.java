@@ -109,7 +109,7 @@ public class Root {
 
             while (true) {
 
-                Socket socketClientConnect =                socketConnect.accept();
+                Socket socketClientConnect = socketConnect.accept();
 
                 executorService.submit(new ClientConnect(socketSendFile, socketClientConnect));
 
@@ -136,6 +136,10 @@ public class Root {
         }
 
     }
+
+
+
+
 
 
     public static void main(String[] args) {
@@ -178,8 +182,6 @@ class ClientConnect
     private Socket connectClient;
     private String deviceId;
     private int filesCount;
-
-    private boolean signalsWait =                           true;
 
     private final String OBJECT_PART_DIVIDER =              "-";
 
@@ -695,22 +697,9 @@ class ClientConnect
 
             while (true) {
 
-                //TimeUnit.MILLISECONDS.sleep(1000);
-
-
 
 
                 query =                                     in.readLine();
-
-
-
-                // Если сработал таймер отсутствия запросов по сигналам - выходим из цикла
-                if(!signalsWait) {
-                    break;
-                }
-
-
-
 
 
 
@@ -787,22 +776,6 @@ class ClientConnect
 
                     executeSignalQuery(query, out);
 
-                    Timer signalsTimer =                    new Timer();
-
-
-                    //  Запускаем таймер
-                    // По истечение времени устанавливаем переменную в false, что бы выйти из цикла
-                    signalsTimer.schedule(
-                            new TimerTask() {
-                                @Override
-                                public void run() {
-                                    System.out.println("TIME!");
-                                    signalsWait =           false;
-                                }
-                            },
-                            30000
-                    );
-
                     continue;
                 }
 
@@ -834,9 +807,7 @@ class ClientConnect
         } catch (IOException e) {
             e.printStackTrace();
             Logging.writeToFile("error", e.getMessage());
-        }
-
-        finally {
+        } finally {
 
             try {
                 connectClient.close();
