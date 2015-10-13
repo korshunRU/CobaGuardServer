@@ -25,6 +25,9 @@ public class Root {
     protected static String SIGNALS_DIR =                   "signals";
     protected static String SIGNALS_FILE =                  "get.txt";
 
+    protected static String GUARD_DIR =                     "guard";
+    protected static String GUARD_FILE =                    "get.txt";
+
     private HashMap<String, String> params =                new HashMap<>();
 
 
@@ -44,7 +47,11 @@ public class Root {
                                                                 "865154028766680", //Новиков (Виталя)
                                                                 "860332025891454", //Чурсинов
                                                                 "865282023989153", //Чинцов
-                                                                "865282023989161" //Чинцов
+                                                                "865282023989161", //Чинцов
+                                                                "860332025895307", //Колесников
+                                                                "358453052133088", //Артюшенко
+                                                                "358453052133096", //Артюшенко
+                                                                "862546028367000" //Федоров
                                                             };
 
 
@@ -475,7 +482,8 @@ class ClientConnect
 
             if(new File(Root.SIGNALS_DIR).isDirectory() | new File(Root.SIGNALS_DIR + File.separator + deviceId).mkdirs()) {
 
-                File queryFile = new File(Root.SIGNALS_DIR + File.separator + deviceId + File.separator + Root.SIGNALS_FILE);
+                File queryFile =                                    new File(Root.SIGNALS_DIR + File.separator + deviceId + File.separator + Root.SIGNALS_FILE);
+                FileWriter fileWriter =                             null;
 
                 try {
 
@@ -484,14 +492,14 @@ class ClientConnect
                         queryFile.createNewFile();
                     }
 
-                    File xlsFile = new File(Root.SIGNALS_DIR + File.separator + deviceId + File.separator + objectNumber + ".xls");
-                    FileWriter fileWriter = new FileWriter(queryFile);
+                    File xlsFile =                                  new File(Root.SIGNALS_DIR + File.separator + deviceId + File.separator + objectNumber + ".xls");
+                    fileWriter =                                    new FileWriter(queryFile);
 
 
                     // если файл Excel c сигналами по запрошенному обхекту есть в папке - отсылаем его размер,
                     // имя и ждем подключения для скачивания
                     if(xlsFile.exists() && xlsFile.length() > 0) {
-                        fileWriter.write("0");
+
                         System.out.println(deviceId + ": файл xls найден ");
 
                         // отправляем размер файла
@@ -553,7 +561,7 @@ class ClientConnect
 
                         }
 
-
+                        fileWriter.write("0");
 
                     }
 
@@ -567,10 +575,18 @@ class ClientConnect
                         out.flush();
                     }
 
-                    fileWriter.close();
+
 
                 } catch (IOException e) {
                     e.printStackTrace();
+                } finally {
+                    if(fileWriter != null) {
+                        try {
+                            fileWriter.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
 
             }
@@ -590,6 +606,178 @@ class ClientConnect
     }
 
 
+
+
+
+
+
+
+    /**
+     *  Функция обрабатывает запрос на снятие или постановку объекта на охрану
+     * @param query                             - ссылка на строку запроса
+     * @param out                               - ссылка на PrintWriter
+     */
+    private void executeGuardQuery(String query, PrintWriter out) {
+        String objectNumberStr[] =                              query.split(":");
+        String objectNumber =                                   objectNumberStr[1];
+        String objectStatus =                                   objectNumberStr[2];
+        deviceId =                                              objectNumberStr[3];
+
+        String objectStatusStr =                                (objectStatus.equals("#")) ?
+                                                                    "на снятие с охраны " :
+                                                                    "на постановку под охрану ";
+
+        System.out.println(deviceId + ": запрос " + objectStatusStr + objectNumber + " от " + deviceId);
+
+        // проверяем есть ли IMEI в списке
+        if(IMEI_LIST.contains(deviceId)) {
+
+            System.out.println(deviceId + ": IMEI " + deviceId + " найден");
+
+            // проверяем наличие папки для сигналов для конкретного IMEI
+            if(new File(Root.GUARD_DIR).isDirectory() | new File(Root.GUARD_DIR + File.separator + deviceId).mkdirs()) {
+
+                File queryFile =                                new File(Root.GUARD_DIR + File.separator + deviceId + File.separator + Root.GUARD_FILE);
+
+
+
+                // если файла txt в вышесозданной папке нет - создаем
+                if(!queryFile.exists()) {
+                    try {
+                        queryFile.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
+
+
+                String queryFileStr =                           "";
+
+                try(BufferedReader fileReader =                 new BufferedReader(new FileReader(queryFile))) {
+                    // достаем из файла первую строку
+                    queryFileStr =                              fileReader.readLine();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+
+
+
+                // если строка из файла прочиталась и она не равна нулю - приступаем к ее анализу
+                if(!queryFileStr.equals("") && !queryFileStr.equals("0")) {
+
+                    String queryFileStrSplit[] =                queryFileStr.split(":");
+
+                    System.out.println("queryFileStrSplit[2] - " + queryFileStrSplit[2]);
+
+                    // на всякий случай проверяем, совпадает ли присланный объект и его статус с теми,
+                    // которые записаны в файле
+                    if (queryFileStrSplit[0].equals(objectNumber) && queryFileStrSplit[1].equals(objectStatus)) {
+
+
+                        // если 3й параметр в строке отсутствует - значит снятие\постановка еще не прошла, ждем
+                        if (queryFileStrSplit[2] == null) {
+
+                            // отправляем ноль - это сигнал клиенту о том, что запрос в процессе выполнения
+                            out.println(0);
+                            out.flush();
+
+                            System.out.println(deviceId + ": объект " + queryFileStrSplit[0] + " в процессе обработки ...");
+
+                        }
+
+
+                        // если присутсвует 3й параметр в строке и он равен % - значит запрос успешно отработан
+                        if (queryFileStrSplit[2] != null && queryFileStrSplit[2].equals("%")) {
+
+                            String readState =                  (queryFileStrSplit[1].equals("#")) ?
+                                                                    " успешно снят с охраны" :
+                                                                    " успешно поставлен на охрану";
+
+                            // отправляем единицу - это сигнал клиенту о том, что запрос успешно отработан
+                            out.println(1);
+                            out.flush();
+
+
+                            // записываем в файл ноль
+                            try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                                fileWriter.write("0");
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+
+                            System.out.println(deviceId + ": объект " + queryFileStrSplit[0] + readState);
+
+                        }
+
+                    }
+
+                    // если присланный объект и его статус не совпадает с теми, которые записаны в файле
+                    // отправляем сообщение об ошибке
+                    else {
+
+                        // отправляем -1 - это сигнал клиенту о том, что произошла ошибка
+                        out.println(-1);
+                        out.flush();
+
+                        System.out.println(deviceId + ": присланный объект не совпадает с записанным!");
+                    }
+
+
+                }
+
+
+
+                // если строка равна нулю - записываем в файл запрос
+                else if(queryFileStr.equals("0")) {
+
+                    // записываем в файл запрос
+                    try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                        fileWriter.write(objectNumber + ":" + objectStatus);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    // отправляем ноль - это сигнал клиенту о том, что запрос в процессе выполнения
+                    out.println(0);
+                    out.flush();
+
+                    System.out.println(deviceId + ": запрос отправлен на обработку");
+                }
+
+
+
+                // если первая строка пустая - записываем ноль
+                else if(queryFileStr.equals("")) {
+
+                    // записываем в файл ноль
+                    try(FileWriter fileWriter =                 new FileWriter(queryFile))  {
+                        fileWriter.write("0");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+
+            }
+
+        }
+
+
+
+        // если IMEI не найден в списке, шлем обратно код ошибки
+        else {
+            System.out.println(deviceId + ": ОШИБКА АВТОРИЗАЦИИ IMEI");
+            Logging.writeToFile(deviceId, "access", "ОШИБКА АВТОРИЗАЦИИ IMEI");
+
+            out.println(-4);
+            out.flush();
+        }
+
+    }
 
 
 
@@ -809,7 +997,13 @@ class ClientConnect
 
 
 
+                //Клиент сделал запрос на постановку или снятие объекта
+                if (query.startsWith("setObjectStatus")) {
 
+                    executeGuardQuery(query, out);
+
+                    continue;
+                }
 
 
 
