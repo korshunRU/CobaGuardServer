@@ -623,11 +623,25 @@ class ClientConnect
         String objectStatus =                                   objectNumberStr[2];
         deviceId =                                              objectNumberStr[3];
 
-        String objectStatusStr =                                (objectStatus.equals("#")) ?
-                                                                    "на снятие с охраны " :
-                                                                    "на постановку под охрану ";
+        String objectStatusStr =                                "";
 
-        System.out.println(deviceId + ": запрос " + objectStatusStr + objectNumber + " от " + deviceId);
+        switch (objectStatus) {
+
+            case "0":
+                objectStatusStr =                               "на очистку файла запросов";
+                break;
+
+            case "#":
+                objectStatusStr =                               "на снятие с охраны " + objectNumber;
+                break;
+
+            case "*":
+                objectStatusStr =                               "на постановку под охрану " + objectNumber;
+                break;
+
+        }
+
+        System.out.println(deviceId + ": запрос " + objectStatusStr  + " от " + deviceId);
 
         // проверяем есть ли IMEI в списке
         if(IMEI_LIST.contains(deviceId)) {
