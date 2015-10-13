@@ -648,6 +648,14 @@ class ClientConnect
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
+                    // записываем в файл ноль
+                    try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                        fileWriter.write("0");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 }
 
 
@@ -666,12 +674,14 @@ class ClientConnect
 
 
 
+
+
                 // если строка из файла прочиталась и она не равна нулю - приступаем к ее анализу
                 if(!queryFileStr.equals("") && !queryFileStr.equals("0")) {
 
                     String queryFileStrSplit[] =                queryFileStr.split(":");
 
-                    System.out.println("queryFileStrSplit[2] - " + queryFileStrSplit[2]);
+//                    System.out.println("queryFileStrSplit[2] - " + queryFileStrSplit[2]);
 
                     // на всякий случай проверяем, совпадает ли присланный объект и его статус с теми,
                     // которые записаны в файле
@@ -679,7 +689,7 @@ class ClientConnect
 
 
                         // если 3й параметр в строке отсутствует - значит снятие\постановка еще не прошла, ждем
-                        if (queryFileStrSplit[2] == null) {
+                        if (queryFileStrSplit.length == 2) {
 
                             // отправляем ноль - это сигнал клиенту о том, что запрос в процессе выполнения
                             out.println(0);
@@ -691,14 +701,18 @@ class ClientConnect
 
 
                         // если присутсвует 3й параметр в строке и он равен % - значит запрос успешно отработан
-                        if (queryFileStrSplit[2] != null && queryFileStrSplit[2].equals("%")) {
+                        if (queryFileStrSplit.length > 2 && queryFileStrSplit[2].equals("%")) {
 
                             String readState =                  (queryFileStrSplit[1].equals("#")) ?
                                                                     " успешно снят с охраны" :
                                                                     " успешно поставлен на охрану";
 
-                            // отправляем единицу - это сигнал клиенту о том, что запрос успешно отработан
-                            out.println(1);
+                            int answer =                        (queryFileStrSplit[1].equals("#")) ?
+                                                                    1 :
+                                                                    2;
+
+                            // отправляем единицу или двойку в зависимости от того, постановка это была или снятие
+                            out.println(answer);
                             out.flush();
 
 
@@ -1033,6 +1047,7 @@ class ClientConnect
             try {
                 connectClient.close();
                 System.out.println(deviceId + ": Соединение закрыто. connectClient.close()");
+                System.out.println("/ ========================================================================== /");
                 Logging.writeToFile(deviceId, "access", "Соединение закрыто");
             } catch (IOException e) {
                 e.printStackTrace();
