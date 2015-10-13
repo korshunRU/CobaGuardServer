@@ -660,6 +660,28 @@ class ClientConnect
 
 
 
+                // если статус объекта равен нулю - это запрос на очистку файла запроса
+                if(objectStatus.equals("0")) {
+
+                    // записываем в файл ноль
+                    try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                        fileWriter.write("0");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    // отправляем -5 - это сигнал клиенту о том, что файл обнулен
+                    out.println(-5);
+                    out.flush();
+
+                    System.out.println(deviceId + ": запрос на очистку файла запросов выполнен ");
+
+                    // выходим
+                    return;
+                }
+
+
+
 
                 String queryFileStr =                           "";
 
