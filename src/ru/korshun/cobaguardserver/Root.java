@@ -51,7 +51,9 @@ public class Root {
                                                                 "860332025895307", //Колесников
                                                                 "358453052133088", //Артюшенко
                                                                 "358453052133096", //Артюшенко
-                                                                "862546028367000" //Федоров
+                                                                "862546028367000", //Федоров
+                                                                "860071022983563", //Журавлев
+                                                                "860071022983571" //Журавлев
                                                             };
 
 
@@ -769,8 +771,8 @@ class ClientConnect
                     // отправляем сообщение об ошибке
                     else {
 
-                        // отправляем -1 - это сигнал клиенту о том, что произошла ошибка
-                        out.println(-1);
+                        // отправляем -6 - это сигнал клиенту о том, что файл запроса занят другим объектом
+                        out.println(-6);
                         out.flush();
 
                         System.out.println(deviceId + ": присланный объект не совпадает с записанным!");
@@ -785,7 +787,7 @@ class ClientConnect
                 else if(queryFileStr.equals("0")) {
 
                     // записываем в файл запрос
-                    try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                    try (FileWriter fileWriter =                new FileWriter(queryFile)) {
                         fileWriter.write(objectNumber + ":" + objectStatus);
                     } catch (IOException e) {
                         e.printStackTrace();
