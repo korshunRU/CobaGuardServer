@@ -707,18 +707,35 @@ class ClientConnect
 
 
 
+                String queryFileStr;
+//                System.out.println("queryFile.length() = " + queryFile.length() + " .");
+                if(queryFile.length() > 0) {
+                    queryFileStr =                      "";
+//                System.out.println("queryFile.length() > 0 ");
+                    try (BufferedReader fileReader = new BufferedReader(new FileReader(queryFile))) {
+                        // достаем из файла первую строку
+//                    System.out.println("2queryFileStr = " + queryFileStr + " .");
+                        queryFileStr =                  fileReader.readLine().trim();
+//                    System.out.println("3queryFileStr = " + queryFileStr + " .");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
 
-                String queryFileStr =                           "";
+                else {
 
-                try(BufferedReader fileReader =                 new BufferedReader(new FileReader(queryFile))) {
-                    // достаем из файла первую строку
-                    queryFileStr =                              fileReader.readLine().trim();
-                } catch (IOException e) {
-                    e.printStackTrace();
+//                    System.out.println("queryFile.length() == 0 ");
+                    // записываем в файл ноль
+                    try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                        fileWriter.write("0");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    queryFileStr =                      "0";
                 }
 
 
-                System.out.println("queryFileStr = " + queryFileStr + " .");
 
 
 
