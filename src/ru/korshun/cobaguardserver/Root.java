@@ -13,7 +13,7 @@ public class Root {
 
     private int PORT;
     private int PORT_FILES;
-    private int ACCEPT_TIMEOUT;
+    public static int ACCEPT_TIMEOUT;
     public static String COBA_PATH_NAME;
 
     ExecutorService executorService;
@@ -238,7 +238,7 @@ class ClientConnect
         this.connectClient =                                ConnectClient;
 
         try {
-            this.connectClient.setSoTimeout(10000);
+            this.connectClient.setSoTimeout(Root.ACCEPT_TIMEOUT * 1000);
         } catch (SocketException e) {
             e.printStackTrace();
         }
@@ -712,13 +712,13 @@ class ClientConnect
 
                 try(BufferedReader fileReader =                 new BufferedReader(new FileReader(queryFile))) {
                     // достаем из файла первую строку
-                    queryFileStr =                              fileReader.readLine();
+                    queryFileStr =                              fileReader.readLine().trim();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
 
-
+                System.out.println("queryFileStr = " + queryFileStr + " .");
 
 
 
@@ -812,7 +812,7 @@ class ClientConnect
 
 
                 // если первая строка пустая - записываем ноль
-                else if(queryFileStr.equals("")) {
+                else if(queryFileStr.equals("") || queryFileStr.length() == 0) {
 
                     // записываем в файл ноль
                     try(FileWriter fileWriter =                 new FileWriter(queryFile))  {
