@@ -5,9 +5,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-/**
- * Created by user on 01.01.2015.
- */
+
+
+
 public final class Logging {
 
     private static final String ERROR_FILE =            "error.log";
@@ -22,7 +22,7 @@ public final class Logging {
 
 
 
-    /* Функция записи строки в файл
+    /** Функция записи строки в файл
             type:
                 - access: файл доступа
                 - error: файл ошибок
@@ -59,13 +59,13 @@ public final class Logging {
 
 
 
-    /* Функция записи строки в файл
+    /** Функция записи строки в файл
         imei: imei телефона
         type:
             - access: файл доступа
             - error: файл ошибок
         str: строка для записи
- */
+    */
     public static void writeToFile(String imei, String type, String str) {
 
         String fileName = null;

@@ -345,9 +345,9 @@ class ClientConnect
         System.out.println(deviceId + ": Обновление завершено, клиент отключился");
 
         Logging.writeToFile("access", "Обновление завершено, клиент " + this.connectClient +
-                " отключился \r\n\r\n====================================================================================== \r\n");
+                " отключился");
         Logging.writeToFile(deviceId, "access", "Обновление завершено, " +
-                "клиент отключился \r\n\r\n====================================================================================== \r\n");
+                "клиент отключился");
     }
 
 
@@ -654,10 +654,14 @@ class ClientConnect
 
         System.out.println(deviceId + ": запрос " + objectStatusStr  + " от " + deviceId);
 
+        Logging.writeToFile(deviceId, "access", "Запрос " + objectStatusStr);
+
         // проверяем есть ли IMEI в списке
         if(IMEI_LIST.contains(deviceId)) {
 
             System.out.println(deviceId + ": IMEI " + deviceId + " найден");
+
+            Logging.writeToFile(deviceId, "access", "IMEI " + deviceId + " найден");
 
             // проверяем наличие папки для сигналов для конкретного IMEI
             if(new File(Root.GUARD_DIR).isDirectory() | new File(Root.GUARD_DIR + File.separator + deviceId).mkdirs()) {
@@ -700,6 +704,8 @@ class ClientConnect
                     out.flush();
 
                     System.out.println(deviceId + ": запрос на очистку файла запросов выполнен ");
+
+                    Logging.writeToFile(deviceId, "access", "Запрос на очистку файла запросов выполнен ");
 
                     // выходим
                     return;
@@ -761,6 +767,8 @@ class ClientConnect
 
                             System.out.println(deviceId + ": объект " + queryFileStrSplit[0] + " в процессе обработки ...");
 
+                            Logging.writeToFile(deviceId, "access", "Объект " + queryFileStrSplit[0] + " в процессе обработки ...");
+
                         }
 
 
@@ -789,6 +797,8 @@ class ClientConnect
 
                             System.out.println(deviceId + ": объект " + queryFileStrSplit[0] + readState);
 
+                            Logging.writeToFile(deviceId, "access", "Объект " + queryFileStrSplit[0] + readState);
+
                         }
 
                     }
@@ -802,6 +812,8 @@ class ClientConnect
                         out.flush();
 
                         System.out.println(deviceId + ": присланный объект не совпадает с записанным!");
+
+                        Logging.writeToFile(deviceId, "access", "Присланный объект не совпадает с записанным!");
                     }
 
 
@@ -824,6 +836,8 @@ class ClientConnect
                     out.flush();
 
                     System.out.println(deviceId + ": запрос отправлен на обработку");
+
+                    Logging.writeToFile(deviceId, "access", "Запрос отправлен на обработку");
                 }
 
 
@@ -1112,11 +1126,12 @@ class ClientConnect
                 connectClient.close();
                 System.out.println(deviceId + ": Соединение закрыто. connectClient.close()");
                 System.out.println("/ ========================================================================== /");
-                Logging.writeToFile(deviceId, "access", "Соединение закрыто");
+                Logging.writeToFile(deviceId, "access", "Соединение закрыто \r\n====================================================================================== \r\n");
             } catch (IOException e) {
                 e.printStackTrace();
                 Logging.writeToFile("error", e.getMessage());
             }
+
         }
 
 
