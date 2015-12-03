@@ -15,6 +15,8 @@ public class Root {
     private int PORT_FILES;
     public static int ACCEPT_TIMEOUT;
     public static String COBA_PATH_NAME;
+    public static int BUFFER_SIZE;
+    private final int BUFFER_SIZE_DEFAULT =                 8;
 
     ExecutorService executorService;
 
@@ -62,7 +64,10 @@ public class Root {
                                                                 "353164055513482", //Бормонтов
                                                                 "357189054627179", //Савкин
                                                                 "352384070833241", //Косяковский
-                                                                "357033054327762" //Богданов
+                                                                "357033054327762", //Богданов
+                                                                "357473050360476", //Кузьмин
+                                                                "865973029675156", //Лапин
+                                                                "865973029675164" //Лапин
                                                             };
 
 
@@ -119,7 +124,15 @@ public class Root {
         PORT =                                              Integer.parseInt(params.get("CONNECT_PORT"));
         PORT_FILES =                                        Integer.parseInt(params.get("DOWNLOAD_PORT"));
         ACCEPT_TIMEOUT =                                    Integer.parseInt(params.get("ACCEPT_TIMEOUT"));
+        BUFFER_SIZE =                                       params.get("BUFFER_SIZE") != null ?
+                                                                Integer.parseInt(params.get("BUFFER_SIZE")) :
+                                                                BUFFER_SIZE_DEFAULT;
         COBA_PATH_NAME =                                    params.get("IMG_PATH");
+
+        if(params.get("BUFFER_SIZE") == null) {
+            System.out.println("Param BUFFER_SIZE not found! Using default value!");
+        }
+
     }
 
 
@@ -344,10 +357,8 @@ class ClientConnect
 
         System.out.println(deviceId + ": Обновление завершено, клиент отключился");
 
-        Logging.writeToFile("access", "Обновление завершено, клиент " + this.connectClient +
-                " отключился");
-        Logging.writeToFile(deviceId, "access", "Обновление завершено, " +
-                "клиент отключился");
+        Logging.writeToFile("access", "Обновление завершено, клиент " + this.connectClient + " отключился");
+        Logging.writeToFile(deviceId, "access", "Обновление завершено, клиент отключился");
     }
 
 
@@ -401,6 +412,9 @@ class ClientConnect
         Logging.writeToFile(deviceId, "access", "Новых файлов " + listNewFiles.size());
 
         out.println(listNewFiles.size());
+        out.flush();
+
+        out.println(Root.BUFFER_SIZE);
         out.flush();
 
         return listNewFiles;
@@ -458,6 +472,9 @@ class ClientConnect
         Logging.writeToFile(deviceId, "access", "Файлов " + listNewFiles.size());
 
         out.println(listNewFiles.size());
+        out.flush();
+
+        out.println(Root.BUFFER_SIZE);
         out.flush();
 
         return listNewFiles;
@@ -523,6 +540,11 @@ class ClientConnect
                         out.flush();
 
 
+                        // отправляем размер буфера
+                        out.println(Root.BUFFER_SIZE);
+                        out.flush();
+
+
                         Socket sendFileClient =                         null;
 
                         try {
@@ -542,7 +564,7 @@ class ClientConnect
                                 System.out.println(deviceId + ": Отправляем файл с сигналами: " + xlsFile.getName());
                                 Logging.writeToFile(deviceId, "access", "Отправляем файл с сигналами: " + xlsFile.getName());
 
-                                byte[] buffer =                         new byte[32 * 1024];
+                                byte[] buffer =                         new byte[Root.BUFFER_SIZE * 1024];
                                 int count;
 
                                 while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
@@ -883,19 +905,25 @@ class ClientConnect
      * @param out                               - ссылка на PrintWriter
      * @return                                  - если все прошло без ошибок, возвращается TRUE
      */
-    private boolean downloadFiles(ArrayList<String> listNewFiles, PrintWriter out) {
+    private boolean sendFiles(ArrayList<String> listNewFiles, PrintWriter out) {
+
         System.out.println(deviceId + ": Получен запрос на скачивание");
         Logging.writeToFile(deviceId, "access", "Получен запрос на скачивание");
 
-        int countErrorConnection =                          0;
-        boolean downloadComplite =                          true;
+        Socket sendFileClient;
+
+        try {
+            sendFileClient =                                serverFile.accept();
+        } catch (IOException e) {
+            System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+            return false;
+        }
+
 
         for (String newFile : listNewFiles) {
 
             String tmpPath =                                Root.COBA_PATH_NAME + File.separator + deviceId;
             File fileName =                                 new File(tmpPath + File.separator + newFile);
-
-            Logging.writeToFile(deviceId, "access", "Шифруем: " + newFile);
 
             ImgEncode
                     .getInstance(newFile, Root.COBA_PATH_NAME, tmpPath)
@@ -907,68 +935,110 @@ class ClientConnect
             out.println(fileName.length());
             out.flush();
 
-            System.out.println(deviceId + ": Ожидаем подключения для скачивания ...");
-            Logging.writeToFile(deviceId, "access", "Ожидаем подключения для скачивания ...");
-
-            Socket sendFileClient =                         null;
+            FileInputStream fis;
 
             try {
-                sendFileClient =                            serverFile.accept();
-            } catch (IOException e) {
-                System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
-
-                if(++countErrorConnection >= Root.MAX_ERROR_CONNECT) {
-                    System.out.println(deviceId + ": ИСЧЕРАПАН ЛИМИТ ПОДКЛЮЧЕНИЙ, ОТКЛЮЧАЕМСЯ");
-                    downloadComplite =                      false;
-                    break;
+                fis =                                       new FileInputStream(fileName);
+            } catch (FileNotFoundException e) {
+                try {
+                    fis =                                   new FileInputStream(fileName);
+                } catch (FileNotFoundException e1) {
+                    try {
+                        fis =                               new FileInputStream(fileName);
+                    } catch (FileNotFoundException e2) {
+                        e2.printStackTrace();
+                        return false;
+                    }
                 }
-
             }
 
-            if(sendFileClient != null) {
+            BufferedInputStream bis =                       new BufferedInputStream(fis);
+            DataOutputStream dos;
+            DataInputStream disTestConnect;
 
-                countErrorConnection =                      0;
-
-                try(FileInputStream fis =                   new FileInputStream(fileName);
-                    BufferedInputStream bis =               new BufferedInputStream(fis);
-                    DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream())) {
-
-                    System.out.println(deviceId + ": Клиент для скачивания подключился, отправляем: " + newFile);
-                    Logging.writeToFile(deviceId, "access", "Клиент для скачивания подключился, отправляем: " + newFile);
-
-                    byte[] buffer =                         new byte[32 * 1024];
-                    int count;
-
-                    while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
-                        dos.write(buffer, 0, count);
-                        dos.flush();
-                    }
-
-                    System.out.println(deviceId + ": Файл " + newFile + " передан");
-                    Logging.writeToFile(deviceId, "access", "Файл " + newFile + " передан");
-
-                } catch (IOException e) {
-                    System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
-                } finally {
+            try {
+                dos =                                       new DataOutputStream(sendFileClient.getOutputStream());
+            } catch (IOException e) {
+                try {
+                    dos =                                   new DataOutputStream(sendFileClient.getOutputStream());
+                } catch (IOException e1) {
                     try {
-                        sendFileClient.close();
-                    } catch (IOException e) {
-                        System.out.println(deviceId + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
+                        dos =                               new DataOutputStream(sendFileClient.getOutputStream());
+                    } catch (IOException e2) {
+                        e2.printStackTrace();
+                        return false;
                     }
+                }
+            }
 
-                    if(!fileName.delete()) {
+            try {
+                disTestConnect =                            new DataInputStream(sendFileClient.getInputStream());
+            } catch (IOException e) {
+                try {
+                    disTestConnect =                        new DataInputStream(sendFileClient.getInputStream());
+                } catch (IOException e1) {
+                    try {
+                        disTestConnect =                    new DataInputStream(sendFileClient.getInputStream());
+                    } catch (IOException e2) {
+                        e2.printStackTrace();
+                        return false;
+                    }
+                }
+            }
+
+            byte[] buffer =                     new byte[Root.BUFFER_SIZE * 1024];
+            int count;
+
+
+            try {
+
+                while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
+
+                    dos.write(buffer, 0, count);
+                    dos.flush();
+
+                }
+
+                int result =                    disTestConnect.read();
+//                System.out.println(result);
+
+                if(result == 0) {
+                    System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                    return false;
+                }
+
+                System.out.println(deviceId + ": Файл " + newFile + " передан");
+                Logging.writeToFile(deviceId, "access", "Файл " + newFile + " передан");
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+            } finally {
+
+                try {
+                    fis.close();
+                    if (!fileName.delete()) {
                         System.out.println(deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
                     }
-
-                    System.out.println(deviceId + ": Клиент для скачивания отключился");
-                    Logging.writeToFile(deviceId, "access", "Клиент для скачивания отключился");
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
             }
 
         }
 
-        return downloadComplite;
+
+        if(sendFileClient != null) {
+
+            try {
+                sendFileClient.close();
+            } catch (IOException e) {
+                System.out.println(deviceId + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
+            }
+        }
+
+        return true;
 
     }
 
@@ -1102,8 +1172,8 @@ class ClientConnect
 
 
                 //Клиент сделал запрос на скачивание
-                if (query.equals("download") && filesCount > 0) {
-                    if(!downloadFiles(listNewFiles, out)) {
+                if (query.equals("download") & filesCount > 0) {
+                    if(!sendFiles(listNewFiles, out)) {
                         break;
                     }
                 }
