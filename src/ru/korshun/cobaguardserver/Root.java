@@ -8,6 +8,7 @@ import java.net.SocketTimeoutException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class Root {
 
@@ -815,6 +816,18 @@ class ClientConnect
                             try (FileWriter fileWriter =        new FileWriter(queryFile)) {
                                 fileWriter.write("0");
                             } catch (IOException e) {
+                                System.out.println(deviceId + ": error acces to file! Wait 2 seconds ... ");
+                                Logging.writeToFile(deviceId, "access", "error acces to file! Wait 2 seconds ...");
+                                try {
+                                    TimeUnit.SECONDS.sleep(2);
+                                } catch (InterruptedException e1) {
+                                    e1.printStackTrace();
+                                }
+                                try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                                    fileWriter.write("0");
+                                } catch (IOException e1) {
+                                    e1.printStackTrace();
+                                }
                                 e.printStackTrace();
                             }
 
