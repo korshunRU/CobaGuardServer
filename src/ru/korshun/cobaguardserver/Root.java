@@ -816,7 +816,7 @@ class ClientConnect
                             try (FileWriter fileWriter =        new FileWriter(queryFile)) {
                                 fileWriter.write("0");
                             } catch (IOException e) {
-                                e.printStackTrace();
+//                                e.printStackTrace();
                                 System.out.println(deviceId + ": error acces to file! Wait 2 seconds ... ");
                                 Logging.writeToFile(deviceId, "access", "error acces to file! Wait 2 seconds ...");
                                 try {
@@ -864,7 +864,7 @@ class ClientConnect
                     try (FileWriter fileWriter =                new FileWriter(queryFile)) {
                         fileWriter.write(objectNumber + ":" + objectStatus);
                     } catch (IOException e) {
-                        e.printStackTrace();
+//                        e.printStackTrace();
                         System.out.println(deviceId + ": error acces to file! Wait 2 seconds ... ");
                         Logging.writeToFile(deviceId, "access", "error acces to file! Wait 2 seconds ...");
                         try {
