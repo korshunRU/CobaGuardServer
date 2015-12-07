@@ -23,6 +23,7 @@ public class Root {
 
 //    protected static final int MAX_ERROR_CONNECT =          3;
 
+
     private final String CONFIG_FILE =                      "coba.conf";
 
     protected static String SIGNALS_DIR =                   "signals";
