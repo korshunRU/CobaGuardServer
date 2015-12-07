@@ -1039,6 +1039,12 @@ class ClientConnect
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                try {
+                    sendFileClient.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                return false;
             } finally {
 
                 try {
