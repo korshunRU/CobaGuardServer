@@ -816,6 +816,7 @@ class ClientConnect
                             try (FileWriter fileWriter =        new FileWriter(queryFile)) {
                                 fileWriter.write("0");
                             } catch (IOException e) {
+//                                e.printStackTrace();
                                 System.out.println(deviceId + ": error acces to file! Wait 2 seconds ... ");
                                 Logging.writeToFile(deviceId, "access", "error acces to file! Wait 2 seconds ...");
                                 try {
@@ -828,7 +829,6 @@ class ClientConnect
                                 } catch (IOException e1) {
                                     e1.printStackTrace();
                                 }
-                                e.printStackTrace();
                             }
 
                             System.out.println(deviceId + ": объект " + queryFileStrSplit[0] + readState);
@@ -864,7 +864,19 @@ class ClientConnect
                     try (FileWriter fileWriter =                new FileWriter(queryFile)) {
                         fileWriter.write(objectNumber + ":" + objectStatus);
                     } catch (IOException e) {
-                        e.printStackTrace();
+//                        e.printStackTrace();
+                        System.out.println(deviceId + ": error acces to file! Wait 2 seconds ... ");
+                        Logging.writeToFile(deviceId, "access", "error acces to file! Wait 2 seconds ...");
+                        try {
+                            TimeUnit.SECONDS.sleep(2);
+                        } catch (InterruptedException e1) {
+                            e1.printStackTrace();
+                        }
+                        try (FileWriter fileWriter =        new FileWriter(queryFile)) {
+                            fileWriter.write(objectNumber + ":" + objectStatus);
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                        }
                     }
 
                     // отправляем ноль - это сигнал клиенту о том, что запрос в процессе выполнения
@@ -1027,6 +1039,12 @@ class ClientConnect
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                try {
+                    sendFileClient.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                return false;
             } finally {
 
                 try {
