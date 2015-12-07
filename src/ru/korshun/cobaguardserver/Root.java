@@ -19,9 +19,9 @@ public class Root {
     public static int BUFFER_SIZE;
     private final int BUFFER_SIZE_DEFAULT =                 8;
 
-    ExecutorService executorService;
+    private ExecutorService executorService;
 
-    protected static final int MAX_ERROR_CONNECT =          3;
+//    protected static final int MAX_ERROR_CONNECT =          3;
 
     private final String CONFIG_FILE =                      "coba.conf";
 
