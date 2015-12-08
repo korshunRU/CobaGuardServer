@@ -23,7 +23,6 @@ public class Root {
 
 //    protected static final int MAX_ERROR_CONNECT =          3;
 
-
     private final String CONFIG_FILE =                      "coba.conf";
 
     protected static String SIGNALS_DIR =                   "signals";
@@ -1031,6 +1030,14 @@ class ClientConnect
 
                 if(result == 0) {
                     System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                    try {
+                        bis.close();
+                        dos.close();
+                        disTestConnect.close();
+                        sendFileClient.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
                     return false;
                 }
 
@@ -1040,11 +1047,16 @@ class ClientConnect
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+
                 try {
+                    bis.close();
+                    dos.close();
+                    disTestConnect.close();
                     sendFileClient.close();
                 } catch (IOException e1) {
                     e1.printStackTrace();
                 }
+
                 return false;
             } finally {
 
