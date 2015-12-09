@@ -14,20 +14,22 @@ import java.io.*;
  */
 public class ImgEncode {
 
-    private String imgInputPath, imgOutputPath, imgName;
+    private String                  imgInputPath,
+                                    imgOutputPath,
+                                    imgName;
 
     private ImgEncode(String imgInputPath, String imgOutputPath) {
 
-        this.imgInputPath = imgInputPath;
-        this.imgOutputPath = imgOutputPath;
+        this.imgInputPath =                                         imgInputPath;
+        this.imgOutputPath =                                        imgOutputPath;
 
     }
 
     private ImgEncode(String imgName, String imgInputPath, String imgOutputPath) {
 
-        this.imgName = imgName;
-        this.imgInputPath = imgInputPath;
-        this.imgOutputPath = imgOutputPath;
+        this.imgName =                                              imgName;
+        this.imgInputPath =                                         imgInputPath;
+        this.imgOutputPath =                                        imgOutputPath;
 
     }
 
@@ -57,16 +59,16 @@ public class ImgEncode {
 
         dirExists(imgOutputPath);
 
-        for(File f : new File(imgInputPath).listFiles()) {
+        for(File f :                                                new File(imgInputPath).listFiles()) {
 
             if(f.isFile()) {
 
-                byte[] enc = load(f.getName());
-                String e = encode(enc);
+                byte[] enc =                                        load(f.getName());
+                String e =                                          encode(enc);
 
-                File f_write = new File(imgOutputPath + File.separator + f.getName());
+                File f_write =                                      new File(imgOutputPath + File.separator + f.getName());
 
-                    try (BufferedWriter output = new BufferedWriter(new FileWriter(f_write))) {
+                    try (BufferedWriter output =                    new BufferedWriter(new FileWriter(f_write))) {
                         output.write(e);
                     } catch (IOException e1) {
                         e1.printStackTrace();
@@ -83,16 +85,16 @@ public class ImgEncode {
 
         dirExists(imgOutputPath);
 
-        File file = new File(imgInputPath + File.separator + imgName);
+        File file =                                                 new File(imgInputPath + File.separator + imgName);
 
         if(file.isFile()) {
 
-            byte[] enc = load(file.getName());
-            String e = encode(enc);
+            byte[] enc =                                            load(file.getName());
+            String e =                                              encode(enc);
 
-            File f_write = new File(imgOutputPath + File.separator + file.getName());
+            File f_write =                                          new File(imgOutputPath + File.separator + file.getName());
 
-            try (BufferedWriter output = new BufferedWriter(new FileWriter(f_write))) {
+            try (BufferedWriter output =                            new BufferedWriter(new FileWriter(f_write))) {
                 output.write(e);
             } catch (IOException e1) {
                 e1.printStackTrace();
@@ -106,13 +108,13 @@ public class ImgEncode {
 
     private byte[] load(String fileName) {
 
-        try(InputStream in = new FileInputStream(imgInputPath + File.separator + fileName)) {
+        try(InputStream in =                                        new FileInputStream(imgInputPath + File.separator + fileName)) {
 
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
-            byte[] buffer = new byte[32 * 1024];
+            ByteArrayOutputStream bout =                            new ByteArrayOutputStream();
+            byte[] buffer =                                         new byte[32 * 1024];
 
             while (true) {
-                int r = in.read(buffer);
+                int r =                                             in.read(buffer);
                 if (r > 0) {
                     bout.write(buffer, 0, r);
                 }
@@ -126,7 +128,7 @@ public class ImgEncode {
             return bout.toByteArray();
 
         } catch (IOException e) {
-
+            e.printStackTrace();
         }
 
         return null;
@@ -135,9 +137,9 @@ public class ImgEncode {
 
     private String encode(byte[] d) {
            if (d == null) return null;
-       byte data[] = new byte[d.length+2];
+       byte data[] =                                                new byte[d.length+2];
        System.arraycopy(d, 0, data, 0, d.length);
-       byte dest[] = new byte[(data.length/3)*4];
+       byte dest[] =                                                new byte[(data.length/3)*4];
 
            // 3-byte to 4-byte conversion
            for (int sidx = 0, didx=0; sidx < d.length; sidx += 3, didx += 4) {
