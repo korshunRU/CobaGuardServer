@@ -17,7 +17,7 @@ public class ClientConnectThread
     private Socket                          connectSocket;
     private ServerSocket                    serverFileSocket;
     private int                             filesToDownload =           0;
-    private String                          deviceId =                  "0000000000000000";
+    private String                          deviceId =                  "000000000000000";
     private final String                    OBJECT_PART_DIVIDER =       "-";
     private final ArrayList<String>         IMEI_LIST =                 new ArrayList<>(Arrays.asList(Settings.getInstance().getIMEI_LIST()));
 
@@ -114,7 +114,7 @@ public class ClientConnectThread
             try {
                 this.connectSocket.close();
                 System.out.println(deviceId + ": / Соединение закрыто /");
-                System.out.println(deviceId + ": / ================================================================================ /");
+                System.out.println(deviceId + ": / ========================================================================= /");
             } catch (IOException e) {
                 e.printStackTrace();
             }
