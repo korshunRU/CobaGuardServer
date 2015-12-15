@@ -20,24 +20,12 @@ public class Root {
         try(ServerSocket serverSocket = new ServerSocket(Settings.getInstance().getConnectPort());
             ServerSocket serverFileSocket = new ServerSocket(Settings.getInstance().getConnectPortFiles())) {
 
-
-            try {
-                serverFileSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
-            } catch (SocketException e) {
-                e.printStackTrace();
-            }
-
             executorService =                                           Executors.newCachedThreadPool();
 
             System.out.println("Сервер запущен");
 
             while (true) {
-
-                Socket clientSocket =                                   serverSocket.accept();
-
-                executorService.submit(new ClientConnectThread(clientSocket, serverFileSocket));
-
-                System.out.println("Клиент подключился: " + clientSocket);
+                executorService.submit(new ClientConnectThread(serverSocket.accept(), serverFileSocket));
             }
 
         } catch (IOException e) {

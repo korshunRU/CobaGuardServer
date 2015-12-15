@@ -28,11 +28,14 @@ public class ClientConnectThread
     public ClientConnectThread(Socket connectSocket, ServerSocket serverFileSocket) {
         this.connectSocket =                                            connectSocket;
         this.serverFileSocket =                                         serverFileSocket;
+
         try {
             this.connectSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
         } catch (SocketException e) {
             e.printStackTrace();
         }
+
+        System.out.println("Клиент подключился: " + this.connectSocket);
     }
 
 
@@ -276,6 +279,14 @@ public class ClientConnectThread
         }
 
 
+        try {
+            fileSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+
+
+
         for (String newFile : listNewFiles) {
 
             String tmpPath =                                            Settings.getInstance().getFilesPath() + File.separator + deviceId;
@@ -331,7 +342,7 @@ public class ClientConnectThread
                 int result =                                disTestConnect.read();
 
                 if(result == 0) {
-                    System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                    System.out.println(deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА. result == 0");
                     try {
                         bis.close();
                         dos.close();
@@ -458,6 +469,12 @@ public class ClientConnectThread
                         }
 
                         if(sendFileClient != null) {
+
+                            try {
+                                sendFileClient.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
+                            } catch (SocketException e) {
+                                e.printStackTrace();
+                            }
 
                             try(FileInputStream fis =                   new FileInputStream(xlsFile);
                                 BufferedInputStream bis =               new BufferedInputStream(fis);
