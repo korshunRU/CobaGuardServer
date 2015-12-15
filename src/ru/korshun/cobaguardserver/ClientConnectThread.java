@@ -59,7 +59,7 @@ public class ClientConnectThread
 
 
 
-                // Запрашиваются все  файлы для обновления
+                // Запрашиваются все файлы для обновления
                 if(query.startsWith("getNewFiles:")) {
                     listNewFiles =                                      getFiles(query, out, false);
                     filesToDownload =                                   listNewFiles.size();
