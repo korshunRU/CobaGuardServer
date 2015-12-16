@@ -207,7 +207,7 @@ public class ClientConnectThread
 
         String lastUpdateDate[] =                                       query.split(":");
         deviceId =                                                      lastUpdateDate[2];
-        String version = lastUpdateDate[3] != null ?
+        String version = lastUpdateDate.length >= 4 ?
                                                                         lastUpdateDate[3] :
                                                                         "OLD";
 
@@ -415,7 +415,7 @@ public class ClientConnectThread
         String objectNumberStr[] =                                      query.split(":");
         String objectNumber =                                           objectNumberStr[1];
         deviceId =                                                      objectNumberStr[2];
-        String version = objectNumberStr[3] != null ?
+        String version = objectNumberStr.length >= 4 ?
                                                                         objectNumberStr[3] :
                                                                         "OLD";
 
@@ -585,7 +585,7 @@ public class ClientConnectThread
         String objectNumber =                                           objectNumberStr[1];
         String objectStatus =                                           objectNumberStr[2];
         deviceId =                                                      objectNumberStr[3];
-        String version = objectNumberStr[3] != null ?
+        String version = objectNumberStr.length >= 5 ?
                                                                         objectNumberStr[4] :
                                                                         "OLD";
 
