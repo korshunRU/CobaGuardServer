@@ -207,12 +207,15 @@ public class ClientConnectThread
 
         String lastUpdateDate[] =                                       query.split(":");
         deviceId =                                                      lastUpdateDate[2];
+        String version = lastUpdateDate[3] != null ?
+                                                                        lastUpdateDate[3] :
+                                                                        "OLD";
 
         String str =                                                    (isObjectFiles) ?
                                                                             "запрашивается объект " + lastUpdateDate[1] :
                                                                             "запрашивается количество новых файлов";
 
-        System.out.println(deviceId + ": " + str);
+        System.out.println(deviceId + ": " + version + ": " + str);
 
         File cobaPath =                                                 new File(Settings.getInstance().getFilesPath());
         File[] countFiles =                                             cobaPath.listFiles();
@@ -245,7 +248,7 @@ public class ClientConnectThread
 
         }
 
-        System.out.println(deviceId + ": Новых файлов " + listNewFiles.size());
+        System.out.println(deviceId + ": " + version  + ": Новых файлов " + listNewFiles.size());
 
         out.println(listNewFiles.size());
         out.println(Settings.getInstance().getBufferSize());
@@ -271,13 +274,14 @@ public class ClientConnectThread
 
         Socket fileSocket;
 
-        try {
-            fileSocket =                                                serverFileSocket.accept();
-        } catch (IOException e) {
-            System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
-            return false;
+        synchronized (serverFileSocket) {
+            try {
+                fileSocket =                                            serverFileSocket.accept();
+            } catch (IOException e) {
+                System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+                return false;
+            }
         }
-
 
         try {
             fileSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
@@ -411,13 +415,16 @@ public class ClientConnectThread
         String objectNumberStr[] =                                      query.split(":");
         String objectNumber =                                           objectNumberStr[1];
         deviceId =                                                      objectNumberStr[2];
+        String version = objectNumberStr[3] != null ?
+                                                                        objectNumberStr[3] :
+                                                                        "OLD";
 
-        System.out.println(deviceId + ": запрос " + objectNumber + " от " + deviceId);
+        System.out.println(deviceId + ": " + version  + ": запрос " + objectNumber + " от " + deviceId);
 
         // проверяем есть ли IMEI в списке
         if(IMEI_LIST.contains(deviceId)) {
 
-            System.out.println(deviceId + ": IMEI " + deviceId + " найден");
+            System.out.println(deviceId + ": " + version  + ": IMEI " + deviceId + " найден");
 
             // проверяем наличие папки для сигналов для конкретного IMEI
 
@@ -446,7 +453,7 @@ public class ClientConnectThread
                     // имя и ждем подключения для скачивания
                     if(xlsFile.exists() && xlsFile.length() > 0) {
 
-                        System.out.println(deviceId + ": файл xls найден ");
+                        System.out.println(deviceId + ": " + version  + ": файл xls найден ");
 
                         // отправляем размер файла
                         out.println(xlsFile.length());
@@ -462,10 +469,12 @@ public class ClientConnectThread
 
                         Socket sendFileClient =                         null;
 
-                        try {
-                            sendFileClient =                            serverFileSocket.accept();
-                        } catch (IOException e) {
-                            System.out.println(deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+                        synchronized (serverFileSocket) {
+                            try {
+                                sendFileClient =                        serverFileSocket.accept();
+                            } catch (IOException e) {
+                                System.out.println(deviceId + ": " + version + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+                            }
                         }
 
                         if(sendFileClient != null) {
@@ -481,7 +490,7 @@ public class ClientConnectThread
                                 DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream());
                                 DataInputStream disTestConnect =        new DataInputStream(sendFileClient.getInputStream())) {
 
-                                System.out.println(deviceId + ": Отправляем файл с сигналами: " + xlsFile.getName());
+                                System.out.println(deviceId + ": " + version + ": Отправляем файл с сигналами: " + xlsFile.getName());
 
                                 byte[] buffer =                         new byte[Settings.getInstance().getBufferSize() * 1024];
                                 int count;
@@ -494,24 +503,24 @@ public class ClientConnectThread
                                 int result =                            disTestConnect.read();
 
                                 if(result == 0) {
-                                    System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
+                                    System.out.println(deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
                                 }
 
                                 else if(result == 1){
-                                    System.out.println(deviceId + ": Файл сигналов " + xlsFile.getName() + " передан");
+                                    System.out.println(deviceId + ": " + version + ": Файл сигналов " + xlsFile.getName() + " передан");
                                 }
 
                             } catch (IOException e) {
-                                System.out.println(deviceId + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
+                                System.out.println(deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
                             } finally {
                                 try {
                                     sendFileClient.close();
                                 } catch (IOException e) {
-                                    System.out.println(deviceId + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
+                                    System.out.println(deviceId + ": " + version + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
                                 }
 
                                 if(!xlsFile.delete()) {
-                                    System.out.println(deviceId + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
+                                    System.out.println(deviceId + ": " + version + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
                                 }
                             }
 
@@ -525,7 +534,7 @@ public class ClientConnectThread
                     // если файл Excel c сигналами по запрошенному обхекту отсутствует - отсылаем 0
                     else {
                         fileWriter.write(objectNumber);
-                        System.out.println(deviceId + ": файл xls отсутствует ");
+                        System.out.println(deviceId + ": " + version + ": файл xls отсутствует ");
 
                         out.println(0);
                     }
@@ -551,7 +560,7 @@ public class ClientConnectThread
 
         // если IMEI не найден в списке, шлем обратно код ошибки
         else {
-            System.out.println(deviceId + ": ОШИБКА АВТОРИЗАЦИИ IMEI");
+            System.out.println(deviceId + ": " + version + ": ОШИБКА АВТОРИЗАЦИИ IMEI");
 
             out.println(-4);
         }
@@ -576,6 +585,9 @@ public class ClientConnectThread
         String objectNumber =                                           objectNumberStr[1];
         String objectStatus =                                           objectNumberStr[2];
         deviceId =                                                      objectNumberStr[3];
+        String version = objectNumberStr[3] != null ?
+                                                                        objectNumberStr[4] :
+                                                                        "OLD";
 
         String objectStatusStr =                                        "";
 
@@ -595,12 +607,12 @@ public class ClientConnectThread
 
         }
 
-        System.out.println(deviceId + ": запрос " + objectStatusStr  + " от " + deviceId);
+        System.out.println(deviceId + ": " + version + ": запрос " + objectStatusStr  + " от " + deviceId);
 
         // проверяем есть ли IMEI в списке
         if(IMEI_LIST.contains(deviceId)) {
 
-            System.out.println(deviceId + ": IMEI " + deviceId + " найден");
+            System.out.println(deviceId + ": " + version + ": IMEI " + deviceId + " найден");
 
             // проверяем наличие папки для сигналов для конкретного IMEI
             if(new File(Settings.getInstance().getGUARD_DIR()).isDirectory() |
@@ -644,7 +656,7 @@ public class ClientConnectThread
                     // отправляем -5 - это сигнал клиенту о том, что файл обнулен
                     out.println(-5);
 
-                    System.out.println(deviceId + ": запрос на очистку файла запросов выполнен ");
+                    System.out.println(deviceId + ": " + version + ": запрос на очистку файла запросов выполнен ");
 
                     // выходим
                     return;
@@ -700,7 +712,7 @@ public class ClientConnectThread
                             // отправляем ноль - это сигнал клиенту о том, что запрос в процессе выполнения
                             out.println(0);
 
-                            System.out.println(deviceId + ": объект " + queryFileStrSplit[0] + " в процессе обработки ...");
+                            System.out.println(deviceId + ": " + version + ": объект " + queryFileStrSplit[0] + " в процессе обработки ...");
 
                         }
 
@@ -725,7 +737,7 @@ public class ClientConnectThread
                                 fileWriter.write("0");
                             } catch (IOException e) {
 //                                e.printStackTrace();
-                                System.out.println(deviceId + ": error acces to file! Wait 2 seconds ... ");
+                                System.out.println(deviceId + ": " + version + ": error acces to file! Wait 2 seconds ... ");
                                 try {
                                     TimeUnit.SECONDS.sleep(2);
                                 } catch (InterruptedException e1) {
@@ -738,7 +750,7 @@ public class ClientConnectThread
                                 }
                             }
 
-                            System.out.println(deviceId + ": объект " + queryFileStrSplit[0] + readState);
+                            System.out.println(deviceId + ": " + version + ": объект " + queryFileStrSplit[0] + readState);
 
                         }
 
@@ -751,7 +763,7 @@ public class ClientConnectThread
                         // отправляем -6 - это сигнал клиенту о том, что файл запроса занят другим объектом
                         out.println(-6);
 
-                        System.out.println(deviceId + ": присланный объект не совпадает с записанным!");
+                        System.out.println(deviceId + ": " + version + ": присланный объект не совпадает с записанным!");
                     }
 
 
@@ -767,7 +779,7 @@ public class ClientConnectThread
                         fileWriter.write(objectNumber + ":" + objectStatus);
                     } catch (IOException e) {
 //                        e.printStackTrace();
-                        System.out.println(deviceId + ": error acces to file! Wait 2 seconds ... ");
+                        System.out.println(deviceId + ": " + version + ": error acces to file! Wait 2 seconds ... ");
                         try {
                             TimeUnit.SECONDS.sleep(2);
                         } catch (InterruptedException e1) {
@@ -783,7 +795,7 @@ public class ClientConnectThread
                     // отправляем ноль - это сигнал клиенту о том, что запрос в процессе выполнения
                     out.println(0);
 
-                    System.out.println(deviceId + ": запрос отправлен на обработку");
+                    System.out.println(deviceId + ": " + version + ": запрос отправлен на обработку");
                 }
 
 
@@ -808,7 +820,7 @@ public class ClientConnectThread
 
         // если IMEI не найден в списке, шлем обратно код ошибки
         else {
-            System.out.println(deviceId + ": ОШИБКА АВТОРИЗАЦИИ IMEI");
+            System.out.println(deviceId + ": " + version + ": ОШИБКА АВТОРИЗАЦИИ IMEI");
 
             out.println(-4);
         }
