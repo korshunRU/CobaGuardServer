@@ -22,7 +22,7 @@ public class ClientConnectThread
     private String                          deviceId =                  "000000000000000";
     private final String                    OBJECT_PART_DIVIDER =       "-";
     private final ArrayList<String>         IMEI_LIST =                 new ArrayList<>(Arrays.asList(Settings.getInstance().getIMEI_LIST()));
-    private String                          timeStamp =                 new SimpleDateFormat("dd.MM.yyyy hh:mm:ss").format(new Date());
+    private String                          timeStamp =                 new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(new Date());
 
 
 
