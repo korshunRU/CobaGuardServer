@@ -111,6 +111,7 @@ public class Settings {
     private void readConfig(){
         String line;
         try(BufferedReader br =                                         new BufferedReader(new FileReader(CONFIG_FILE))) {
+
             while((line = br.readLine()) != null){
 
                 if(line.length() > 0 && !line.startsWith("#") && line.contains("=")) {
