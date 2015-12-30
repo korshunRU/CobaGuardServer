@@ -278,7 +278,9 @@ public class ClientConnectThread
 //        Socket fileSocket;
 
 //        synchronized (serverFileSocket) {
-            try(Socket fileSocket =                                     serverFileSocket.accept()) {
+            try(Socket fileSocket = serverFileSocket.accept();
+                DataOutputStream dos = new DataOutputStream(fileSocket.getOutputStream());
+                DataInputStream disTestConnect = new DataInputStream(fileSocket.getInputStream())) {
 //                fileSocket =                                            serverFileSocket.accept();
 
                 fileSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
@@ -338,9 +340,7 @@ public class ClientConnectThread
 
 
                     try(FileInputStream fis = new FileInputStream(fileName);
-                        BufferedInputStream bis = new BufferedInputStream(fis);
-                        DataOutputStream dos = new DataOutputStream(fileSocket.getOutputStream());
-                        DataInputStream disTestConnect = new DataInputStream(fileSocket.getInputStream())) {
+                        BufferedInputStream bis = new BufferedInputStream(fis)) {
 
                         while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
 
