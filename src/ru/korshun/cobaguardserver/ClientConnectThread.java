@@ -353,7 +353,7 @@ public class ClientConnectThread
 
                         if(result == 0) {
                             System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА. result == 0");
-
+                            Root.isError =                              true;
 //                    try {
 //                        bis.close();
 //                        dos.close();
@@ -381,7 +381,7 @@ public class ClientConnectThread
                     } catch (IOException e) {
                         e.printStackTrace();
                         System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
-
+                        Root.isError =                                  true;
 //                try {
 //                    bis.close();
 //                    dos.close();
@@ -425,6 +425,7 @@ public class ClientConnectThread
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+                Root.isError =                                          true;
                 return false;
             }
 
@@ -539,7 +540,7 @@ public class ClientConnectThread
 
                                     System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Отправляем файл с сигналами: " + xlsFile.getName());
 
-                                    byte[] buffer =                         new byte[Settings.getInstance().getBufferSize() * 1024];
+                                    byte[] buffer =                     new byte[Settings.getInstance().getBufferSize() * 1024];
                                     int count;
 
                                     while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
@@ -547,10 +548,11 @@ public class ClientConnectThread
                                         dos.flush();
                                     }
 
-                                    int result =                            disTestConnect.read();
+                                    int result =                        disTestConnect.read();
 
                                     if(result == 0) {
                                         System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ. result == 0");
+                                        Root.isError =                  true;
                                     }
 
                                     else if(result == 1){
@@ -576,6 +578,7 @@ public class ClientConnectThread
                             } catch (IOException e) {
                                 e.printStackTrace();
                                 System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+                                Root.isError =                          true;
                             } finally {
 
                                 if (!xlsFile.delete()) {
