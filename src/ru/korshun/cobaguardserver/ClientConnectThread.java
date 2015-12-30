@@ -275,129 +275,164 @@ public class ClientConnectThread
 
         System.out.println(timeStamp + ": " + deviceId + ": Получен запрос на скачивание");
 
-        Socket fileSocket;
+//        Socket fileSocket;
 
-        synchronized (serverFileSocket) {
-            try {
-                fileSocket =                                            serverFileSocket.accept();
+//        synchronized (serverFileSocket) {
+            try(Socket fileSocket =                                     serverFileSocket.accept()) {
+//                fileSocket =                                            serverFileSocket.accept();
+
+                fileSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
+
+
+//        }
+
+//        try {
+//            fileSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
+//        } catch (SocketException e) {
+//            e.printStackTrace();
+//        }
+
+
+
+                for (String newFile : listNewFiles) {
+
+                    String tmpPath =                                            Settings.getInstance().getFilesPath() + File.separator + deviceId;
+                    File fileName =                                             new File(tmpPath + File.separator + newFile);
+
+                    ImgEncode
+                            .getInstance(newFile, Settings.getInstance().getFilesPath(), tmpPath)
+                            .encodeImg();
+
+                    out.println(newFile);
+                    out.println(fileName.length());
+
+//            FileInputStream fis;
+//
+//            try {
+//                fis =                                       new FileInputStream(fileName);
+//            } catch (FileNotFoundException e) {
+//                e.printStackTrace();
+//                return false;
+//            }
+//
+//            BufferedInputStream bis =                       new BufferedInputStream(fis);
+//            DataOutputStream dos;
+//            DataInputStream disTestConnect;
+//
+//            try {
+//                dos =                                       new DataOutputStream(fileSocket.getOutputStream());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                return false;
+//            }
+//
+//            try {
+//                disTestConnect =                            new DataInputStream(fileSocket.getInputStream());
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                return false;
+//            }
+
+                    byte[] buffer =                                 new byte[Settings.getInstance().getBufferSize() * 1024];
+                    int count;
+
+
+                    try(FileInputStream fis = new FileInputStream(fileName);
+                        BufferedInputStream bis = new BufferedInputStream(fis);
+                        DataOutputStream dos = new DataOutputStream(fileSocket.getOutputStream());
+                        DataInputStream disTestConnect = new DataInputStream(fileSocket.getInputStream())) {
+
+                        while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
+
+                            dos.write(buffer, 0, count);
+                            dos.flush();
+
+                        }
+
+                        int result =                                disTestConnect.read();
+
+                        if(result == 0) {
+                            System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА. result == 0");
+
+//                    try {
+//                        bis.close();
+//                        dos.close();
+//                        disTestConnect.close();
+//                        fileSocket.close();
+//
+//                        try {
+//                            fis.close();
+//                            if (!fileName.delete()) {
+//                                System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
+//                            }
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//
+//                    } catch (IOException e1) {
+//                        e1.printStackTrace();
+//                    }
+
+                            return false;
+                        }
+
+                        System.out.println(timeStamp + ": " + deviceId + ": Файл " + newFile + " передан");
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+
+//                try {
+//                    bis.close();
+//                    dos.close();
+//                    disTestConnect.close();
+//                    fileSocket.close();
+//
+//                    try {
+//                        fis.close();
+//                        if (!fileName.delete()) {
+//                            System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
+//                        }
+//                    } catch (IOException e1) {
+//                        e1.printStackTrace();
+//                    }
+//
+//                } catch (IOException e2) {
+//                    e2.printStackTrace();
+//                }
+
+                        return false;
+//            } finally {
+//
+//                try {
+//                    fis.close();
+//                    if (!fileName.delete()) {
+//                        System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
+//                    }
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//
+                    }
+
+                    if (!fileName.delete()) {
+                        System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
+                    }
+
+                }
+
             } catch (IOException e) {
                 e.printStackTrace();
                 System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
                 return false;
             }
-        }
-
-        try {
-            fileSocket.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
-        } catch (SocketException e) {
-            e.printStackTrace();
-        }
 
 
-
-        for (String newFile : listNewFiles) {
-
-            String tmpPath =                                            Settings.getInstance().getFilesPath() + File.separator + deviceId;
-            File fileName =                                             new File(tmpPath + File.separator + newFile);
-
-            ImgEncode
-                    .getInstance(newFile, Settings.getInstance().getFilesPath(), tmpPath)
-                    .encodeImg();
-
-            out.println(newFile);
-            out.println(fileName.length());
-
-            FileInputStream fis;
-
-            try {
-                fis =                                       new FileInputStream(fileName);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-                return false;
-            }
-
-            BufferedInputStream bis =                       new BufferedInputStream(fis);
-            DataOutputStream dos;
-            DataInputStream disTestConnect;
-
-            try {
-                dos =                                       new DataOutputStream(fileSocket.getOutputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-            }
-
-            try {
-                disTestConnect =                            new DataInputStream(fileSocket.getInputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
-            }
-
-            byte[] buffer =                                 new byte[Settings.getInstance().getBufferSize() * 1024];
-            int count;
-
-
-            try {
-
-                while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
-
-                    dos.write(buffer, 0, count);
-                    dos.flush();
-
-                }
-
-                int result =                                disTestConnect.read();
-
-                if(result == 0) {
-                    System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА. result == 0");
-                    try {
-                        bis.close();
-                        dos.close();
-                        disTestConnect.close();
-                        fileSocket.close();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                    return false;
-                }
-
-                System.out.println(timeStamp + ": " + deviceId + ": Файл " + newFile + " передан");
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
-
-                try {
-                    bis.close();
-                    dos.close();
-                    disTestConnect.close();
-                    fileSocket.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-
-                return false;
-            } finally {
-
-                try {
-                    fis.close();
-                    if (!fileName.delete()) {
-                        System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-        }
-
-        try {
-            fileSocket.close();
-        } catch (IOException e) {
-            System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
-        }
+//        try {
+//            fileSocket.close();
+//        } catch (IOException e) {
+//            System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
+//        }
 
         return true;
 
@@ -471,63 +506,77 @@ public class ClientConnectThread
                         out.println(Settings.getInstance().getBufferSize());
 
 
-                        Socket sendFileClient =                         null;
+//                        Socket sendFileClient =                         null;
 
-                        synchronized (serverFileSocket) {
-                            try {
-                                sendFileClient =                        serverFileSocket.accept();
-                            } catch (IOException e) {
-                                System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
-                            }
-                        }
-
-                        if(sendFileClient != null) {
-
-                            try {
-                                sendFileClient.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
-                            } catch (SocketException e) {
-                                e.printStackTrace();
-                            }
-
-                            try(FileInputStream fis =                   new FileInputStream(xlsFile);
+//                        synchronized (serverFileSocket) {
+                            try(Socket sendFileClient =                 serverFileSocket.accept();
+                                FileInputStream fis =                   new FileInputStream(xlsFile);
                                 BufferedInputStream bis =               new BufferedInputStream(fis);
                                 DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream());
                                 DataInputStream disTestConnect =        new DataInputStream(sendFileClient.getInputStream())) {
+//                                sendFileClient =                        serverFileSocket.accept();
 
-                                System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Отправляем файл с сигналами: " + xlsFile.getName());
+//                        }
 
-                                byte[] buffer =                         new byte[Settings.getInstance().getBufferSize() * 1024];
-                                int count;
 
-                                while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
-                                    dos.write(buffer, 0, count);
-                                    dos.flush();
-                                }
 
-                                int result =                            disTestConnect.read();
+//                        if(sendFileClient != null) {
 
-                                if(result == 0) {
-                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
-                                }
+//                                try {
+//                                    sendFileClient.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
+//                                } catch (SocketException e) {
+//                                    e.printStackTrace();
+//                                }
 
-                                else if(result == 1){
-                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Файл сигналов " + xlsFile.getName() + " передан");
-                                }
+                                sendFileClient.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
+
+//                                try(FileInputStream fis =                   new FileInputStream(xlsFile);
+//                                    BufferedInputStream bis =               new BufferedInputStream(fis);
+//                                    DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream());
+//                                    DataInputStream disTestConnect =        new DataInputStream(sendFileClient.getInputStream())) {
+
+                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Отправляем файл с сигналами: " + xlsFile.getName());
+
+                                    byte[] buffer =                         new byte[Settings.getInstance().getBufferSize() * 1024];
+                                    int count;
+
+                                    while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
+                                        dos.write(buffer, 0, count);
+                                        dos.flush();
+                                    }
+
+                                    int result =                            disTestConnect.read();
+
+                                    if(result == 0) {
+                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ. result == 0");
+                                    }
+
+                                    else if(result == 1){
+                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Файл сигналов " + xlsFile.getName() + " передан");
+                                    }
+
+//                                } catch (IOException e) {
+//                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
+//                                } finally {
+//                                    try {
+//                                        sendFileClient.close();
+//                                    } catch (IOException e) {
+//                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
+//                                    }
+//
+//                                    if(!xlsFile.delete()) {
+//                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
+//                                    }
+//                                }
+
+//                        }
 
                             } catch (IOException e) {
-                                System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
-                            } finally {
-                                try {
-                                    sendFileClient.close();
-                                } catch (IOException e) {
-                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
-                                }
-
-                                if(!xlsFile.delete()) {
-                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
-                                }
+                                System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
                             }
 
+                        if(!xlsFile.delete()) {
+                            System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
                         }
 
                         fileWriter.write("0");
