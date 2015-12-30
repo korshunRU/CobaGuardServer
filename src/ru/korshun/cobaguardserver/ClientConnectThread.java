@@ -413,12 +413,13 @@ public class ClientConnectThread
 //                    e.printStackTrace();
 //                }
 //
-                    }
+                    } finally {
 
-                    if (!fileName.delete()) {
-                        System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
-                    }
+                        if (!fileName.delete()) {
+                            System.out.println(timeStamp + ": " + deviceId + ": ОШИБКА УДАЛЕНИЯ ВРЕМЕННОГО ФАЙЛА");
+                        }
 
+                    }
                 }
 
             } catch (IOException e) {
@@ -473,19 +474,20 @@ public class ClientConnectThread
                 File queryFile =                                        new File(Settings.getInstance().getSIGNALS_DIR() +
                                                                             File.separator + deviceId + File.separator +
                                                                             Settings.getInstance().getSIGNALS_FILE());
-                FileWriter fileWriter =                                 null;
+//                FileWriter fileWriter =                                 null;
 
-                try {
+
+                File xlsFile =                                          new File(Settings.getInstance().getSIGNALS_DIR() +
+                                                                            File.separator + deviceId + File.separator +
+                                                                            objectNumber + ".xls");
+//                fileWriter =                                        new FileWriter(queryFile);
+
+                try(FileWriter fileWriter =                             new FileWriter(queryFile)) {
 
                     // если файла txt в вышесозданной папке нет - создаем
                     if(!queryFile.exists()) {
                         queryFile.createNewFile();
                     }
-
-                    File xlsFile =                                      new File(Settings.getInstance().getSIGNALS_DIR() +
-                                                                            File.separator + deviceId + File.separator +
-                                                                            objectNumber + ".xls");
-                    fileWriter =                                        new FileWriter(queryFile);
 
 
                     // если файл Excel c сигналами по запрошенному обхекту есть в папке - отсылаем его размер,
@@ -572,15 +574,16 @@ public class ClientConnectThread
 //                        }
 
                             } catch (IOException e) {
+                                e.printStackTrace();
                                 System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПОДКЛЮЧЕНИЯ 6667");
+                            } finally {
+
+                                if (!xlsFile.delete()) {
+                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
+                                }
+
+                                fileWriter.write("0");
                             }
-
-                        if(!xlsFile.delete()) {
-                            System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
-                        }
-
-                        fileWriter.write("0");
-
                     }
 
 
@@ -596,14 +599,14 @@ public class ClientConnectThread
 
                 } catch (IOException e) {
                     e.printStackTrace();
-                } finally {
-                    if(fileWriter != null) {
-                        try {
-                            fileWriter.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
+//                } finally {
+//                    if(fileWriter != null) {
+//                        try {
+//                            fileWriter.close();
+//                        } catch (IOException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
                 }
 
             }
