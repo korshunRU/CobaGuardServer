@@ -298,8 +298,8 @@ public class ClientConnectThread
 
                 for (String newFile : listNewFiles) {
 
-                    String tmpPath =                                            Settings.getInstance().getFilesPath() + File.separator + deviceId;
-                    File fileName =                                             new File(tmpPath + File.separator + newFile);
+                    String tmpPath =                                    Settings.getInstance().getFilesPath() + File.separator + deviceId;
+                    File fileName =                                     new File(tmpPath + File.separator + newFile);
 
                     ImgEncode
                             .getInstance(newFile, Settings.getInstance().getFilesPath(), tmpPath)
@@ -335,7 +335,7 @@ public class ClientConnectThread
 //                return false;
 //            }
 
-                    byte[] buffer =                                 new byte[Settings.getInstance().getBufferSize() * 1024];
+                    byte[] buffer =                                     new byte[Settings.getInstance().getBufferSize() * 1024];
                     int count;
 
 
@@ -349,7 +349,7 @@ public class ClientConnectThread
 
                         }
 
-                        int result =                                disTestConnect.read();
+                        int result =                                    disTestConnect.read();
 
                         if(result == 0) {
                             System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА. result == 0");

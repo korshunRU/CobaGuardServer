@@ -25,7 +25,7 @@ public class Root {
             try (ServerSocket serverSocket = new ServerSocket(Settings.getInstance().getConnectPort());
                  ServerSocket serverFileSocket = new ServerSocket(Settings.getInstance().getConnectPortFiles())) {
 
-                executorService = Executors.newCachedThreadPool();
+                executorService =                                       Executors.newCachedThreadPool();
 
                 System.out.println("Сервер запущен");
 
@@ -40,7 +40,6 @@ public class Root {
                         }
 
                     }
-
                     executorService.submit(new ClientConnectThread(serverSocket.accept(), serverFileSocket));
                 }
 
