@@ -34,14 +34,10 @@ public class Root {
 
                 while (true) {
 
-                    synchronized (Root.class) {
-
-                        if (isError) {
-                            System.out.println("ОШИБКА! ПЕРЕЗАПУСК!");
-                            isError =                                   false;
-                            break;
-                        }
-
+                    if (isError) {
+                        System.out.println("ОШИБКА! ПЕРЕЗАПУСК!");
+                        isError =                                   false;
+                        break;
                     }
 
                     executorService.submit(new ClientConnectThread(serverSocket.accept(), serverFileSocket));
