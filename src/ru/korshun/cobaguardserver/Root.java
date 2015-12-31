@@ -21,7 +21,7 @@ public class Root {
 
         ExecutorService executorService =                               null;
 
-        Timer timer =                                                   new Timer();
+        new Timer().schedule(new FakeConnect(), 0, 2000);
 
         while(true) {
 
@@ -29,8 +29,6 @@ public class Root {
                  ServerSocket serverFileSocket = new ServerSocket(Settings.getInstance().getConnectPortFiles())) {
 
                 executorService =                                       Executors.newCachedThreadPool();
-
-                timer.schedule(new FakeConnect(), 0, 2000);
 
                 System.out.println("Сервер запущен");
 
