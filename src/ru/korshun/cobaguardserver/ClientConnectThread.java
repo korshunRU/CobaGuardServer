@@ -38,7 +38,9 @@ public class ClientConnectThread
             e.printStackTrace();
         }
 
-        System.out.println(timeStamp + ": Клиент подключился: " + this.connectSocket);
+        if(!this.connectSocket.getInetAddress().toString().contains("127.0.0.1")) {
+            System.out.println(timeStamp + ": Клиент подключился: " + this.connectSocket);
+        }
     }
 
 
@@ -58,8 +60,6 @@ public class ClientConnectThread
             ArrayList<String> listNewFiles =                            null;
 
             while (!(query = in.readLine()).equals("disconnect") || (query = in.readLine()) != null) {
-
-
 
 
                 // Запрашиваются все файлы для обновления
@@ -119,8 +119,10 @@ public class ClientConnectThread
         } finally {
             try {
                 this.connectSocket.close();
-                System.out.println(timeStamp + ": " + deviceId + ": / Соединение закрыто /");
-                System.out.println(timeStamp + ": " + deviceId + ": / ========================================================= /");
+                if(!deviceId.equals("000000000000000")) {
+                    System.out.println(timeStamp + ": " + deviceId + ": / Соединение закрыто /");
+                    System.out.println(timeStamp + ": " + deviceId + ": / ========================================================= /");
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
