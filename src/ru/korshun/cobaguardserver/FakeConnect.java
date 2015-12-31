@@ -5,9 +5,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.TimerTask;
 
-/**
- * Created by dbadm on 31.12.15.
- */
+
+
 public class FakeConnect
         extends TimerTask {
 
