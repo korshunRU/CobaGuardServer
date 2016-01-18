@@ -3,11 +3,16 @@ package ru.korshun.cobaguardserver;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
 public class Root {
+
+
+    public static boolean isError =                                     false;
+
 
     @SuppressWarnings("InfiniteLoopStatement")
     public static void main(String[] args) {
@@ -16,23 +21,36 @@ public class Root {
 
         ExecutorService executorService =                               null;
 
-        try(ServerSocket serverSocket = new ServerSocket(Settings.getInstance().getConnectPort());
-            ServerSocket serverFileSocket = new ServerSocket(Settings.getInstance().getConnectPortFiles())) {
+        new Timer().schedule(new FakeConnect(), 0, 2000);
 
-            executorService =                                           Executors.newCachedThreadPool();
+        while(true) {
 
-            System.out.println("Сервер запущен");
+            try (ServerSocket serverSocket = new ServerSocket(Settings.getInstance().getConnectPort());
+                 ServerSocket serverFileSocket = new ServerSocket(Settings.getInstance().getConnectPortFiles())) {
 
-            while (true) {
-                executorService.submit(new ClientConnectThread(serverSocket.accept(), serverFileSocket));
+                executorService =                                       Executors.newCachedThreadPool();
+
+                System.out.println("Сервер запущен");
+
+                while (true) {
+
+                    if (isError) {
+                        System.out.println("ОШИБКА! ПЕРЕЗАПУСК!");
+                        isError =                                   false;
+                        break;
+                    }
+
+                    executorService.submit(new ClientConnectThread(serverSocket.accept(), serverFileSocket));
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (executorService != null) {
+                    executorService.shutdown();
+                }
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if(executorService != null) {
-                executorService.shutdown();
-            }
         }
 
     }
