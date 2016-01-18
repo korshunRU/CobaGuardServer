@@ -15,6 +15,7 @@ public class FakeConnect
 
         try(Socket socket = new Socket("localhost", 6666);
             PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+
             out.println("disconnect");
         } catch (IOException e) {
             e.printStackTrace();
