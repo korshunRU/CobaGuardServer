@@ -222,35 +222,41 @@ public class ClientConnectThread
 
         System.out.println(timeStamp + ": " + deviceId + ": " + version + ": " + str);
 
-        File cobaPath =                                                 new File(Settings.getInstance().getFilesPath());
-        File[] countFiles =                                             cobaPath.listFiles();
+        if(IMEI_LIST.contains(deviceId)) {
 
-        if (cobaPath.isDirectory() && countFiles != null) {
+            File cobaPath = new File(Settings.getInstance().getFilesPath());
+            File[] countFiles = cobaPath.listFiles();
 
-            for (File file : countFiles) {
+            if (cobaPath.isDirectory() && countFiles != null) {
 
-                if(isObjectFiles) {
+                for (File file : countFiles) {
 
-                    if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER) && isObjectNumberEqualsWithFileName(lastUpdateDate[1], file.getName())) {
+                    if (isObjectFiles) {
 
-                        listNewFiles.add(file.getName());
+                        if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER) && isObjectNumberEqualsWithFileName(lastUpdateDate[1], file.getName())) {
 
+                            listNewFiles.add(file.getName());
+
+                        }
+
+                    } else {
+
+
+                        if (file.isFile() && (Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
+
+                            listNewFiles.add(file.getName());
+
+                        }
                     }
 
-                }
-
-                else {
-
-
-                    if (file.isFile() && (Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
-
-                        listNewFiles.add(file.getName());
-
-                    }
                 }
 
             }
 
+        }
+
+        else {
+            System.out.println(timeStamp + ": " + deviceId + ": " + version  + ": ОШИБКА АВТОРИЗАЦИИ");
         }
 
         System.out.println(timeStamp + ": " + deviceId + ": " + version  + ": Новых файлов " + listNewFiles.size());
