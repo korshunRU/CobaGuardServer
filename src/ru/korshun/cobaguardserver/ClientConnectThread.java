@@ -22,6 +22,8 @@ public class ClientConnectThread
     private String                          deviceId =                  "000000000000000";
     private final String                    OBJECT_PART_DIVIDER =       "-";
     private final ArrayList<String>         IMEI_LIST =                 new ArrayList<>(Arrays.asList(Settings.getInstance().getIMEI_LIST()));
+    private final ArrayList<String>         IMEI_LIST_VIDOK =           new ArrayList<>(Arrays.asList(Settings.getInstance().getIMEI_LIST_VIDOK()));
+    private final ArrayList<String>         IMEI_LIST_GBR =             new ArrayList<>(Arrays.asList(Settings.getInstance().getIMEI_LIST_GBR()));
     private String                          timeStamp =                 new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(new Date());
 
 
@@ -222,7 +224,7 @@ public class ClientConnectThread
 
         System.out.println(timeStamp + ": " + deviceId + ": " + version + ": " + str);
 
-        if(IMEI_LIST.contains(deviceId)) {
+        if(IMEI_LIST.contains(deviceId) || IMEI_LIST_GBR.contains(deviceId)) {
 
             File cobaPath = new File(Settings.getInstance().getFilesPath());
             File[] countFiles = cobaPath.listFiles();
@@ -471,7 +473,7 @@ public class ClientConnectThread
         System.out.println(timeStamp + ": " + deviceId + ": " + version  + ": запрос " + objectNumber + " от " + deviceId);
 
         // проверяем есть ли IMEI в списке
-        if(IMEI_LIST.contains(deviceId)) {
+        if(IMEI_LIST.contains(deviceId) || IMEI_LIST_VIDOK.contains(deviceId)) {
 
             System.out.println(timeStamp + ": " + deviceId + ": " + version  + ": IMEI " + deviceId + " найден");
 
@@ -483,13 +485,11 @@ public class ClientConnectThread
                 File queryFile =                                        new File(Settings.getInstance().getSIGNALS_DIR() +
                                                                             File.separator + deviceId + File.separator +
                                                                             Settings.getInstance().getSIGNALS_FILE());
-//                FileWriter fileWriter =                                 null;
 
 
                 File xlsFile =                                          new File(Settings.getInstance().getSIGNALS_DIR() +
                                                                             File.separator + deviceId + File.separator +
                                                                             objectNumber + ".xls");
-//                fileWriter =                                        new FileWriter(queryFile);
 
                 try(FileWriter fileWriter =                             new FileWriter(queryFile)) {
 
@@ -516,72 +516,34 @@ public class ClientConnectThread
                         // отправляем размер буфера
                         out.println(Settings.getInstance().getBufferSize());
 
-
-//                        Socket sendFileClient =                         null;
-
-//                        synchronized (serverFileSocket) {
                             try(Socket sendFileClient =                 serverFileSocket.accept();
                                 FileInputStream fis =                   new FileInputStream(xlsFile);
                                 BufferedInputStream bis =               new BufferedInputStream(fis);
                                 DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream());
                                 DataInputStream disTestConnect =        new DataInputStream(sendFileClient.getInputStream())) {
-//                                sendFileClient =                        serverFileSocket.accept();
-
-//                        }
-
-
-
-//                        if(sendFileClient != null) {
-
-//                                try {
-//                                    sendFileClient.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
-//                                } catch (SocketException e) {
-//                                    e.printStackTrace();
-//                                }
 
                                 sendFileClient.setSoTimeout(Settings.getInstance().getAcceptTimeOut());
 
-//                                try(FileInputStream fis =                   new FileInputStream(xlsFile);
-//                                    BufferedInputStream bis =               new BufferedInputStream(fis);
-//                                    DataOutputStream dos =                  new DataOutputStream(sendFileClient.getOutputStream());
-//                                    DataInputStream disTestConnect =        new DataInputStream(sendFileClient.getInputStream())) {
+                                System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Отправляем файл с сигналами: " + xlsFile.getName());
 
-                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Отправляем файл с сигналами: " + xlsFile.getName());
+                                byte[] buffer =                         new byte[Settings.getInstance().getBufferSize() * 1024];
+                                int count;
 
-                                    byte[] buffer =                     new byte[Settings.getInstance().getBufferSize() * 1024];
-                                    int count;
+                                while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
+                                    dos.write(buffer, 0, count);
+                                    dos.flush();
+                                }
 
-                                    while ((count = bis.read(buffer, 0, buffer.length)) != -1) {
-                                        dos.write(buffer, 0, count);
-                                        dos.flush();
-                                    }
+                                int result =                            disTestConnect.read();
 
-                                    int result =                        disTestConnect.read();
+                                if(result == 0) {
+                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ. result == 0");
+                                    Root.isError =                      true;
+                                }
 
-                                    if(result == 0) {
-                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ. result == 0");
-                                        Root.isError =                  true;
-                                    }
-
-                                    else if(result == 1){
-                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Файл сигналов " + xlsFile.getName() + " передан");
-                                    }
-
-//                                } catch (IOException e) {
-//                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ПЕРЕДАЧИ ФАЙЛА СИГНАЛОВ");
-//                                } finally {
-//                                    try {
-//                                        sendFileClient.close();
-//                                    } catch (IOException e) {
-//                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА ЗАКРЫТИЯ FILE-СОКЕТА");
-//                                    }
-//
-//                                    if(!xlsFile.delete()) {
-//                                        System.out.println(timeStamp + ": " + deviceId + ": " + version + ": ОШИБКА УДАЛЕНИЯ ФАЙЛА СИГНАЛОВ");
-//                                    }
-//                                }
-
-//                        }
+                                else if(result == 1){
+                                    System.out.println(timeStamp + ": " + deviceId + ": " + version + ": Файл сигналов " + xlsFile.getName() + " передан");
+                                }
 
                             } catch (IOException e) {
                                 e.printStackTrace();
@@ -610,14 +572,6 @@ public class ClientConnectThread
 
                 } catch (IOException e) {
                     e.printStackTrace();
-//                } finally {
-//                    if(fileWriter != null) {
-//                        try {
-//                            fileWriter.close();
-//                        } catch (IOException e) {
-//                            e.printStackTrace();
-//                        }
-//                    }
                 }
 
             }
@@ -677,7 +631,7 @@ public class ClientConnectThread
         System.out.println(timeStamp + ": " + deviceId + ": " + version + ": запрос " + objectStatusStr  + " от " + deviceId);
 
         // проверяем есть ли IMEI в списке
-        if(IMEI_LIST.contains(deviceId)) {
+        if(IMEI_LIST.contains(deviceId) || IMEI_LIST_VIDOK.contains(deviceId)) {
 
             System.out.println(timeStamp + ": " + deviceId + ": " + version + ": IMEI " + deviceId + " найден");
 

@@ -66,6 +66,14 @@ public class Settings {
                                                                                 "864706020373582" //Федотовских
                                                                         };
 
+    private final String[]                  IMEI_LIST_VIDOK =           new String[] {
+                                                                                "357967051804531", //Моисеев
+                                                                        };
+
+    private final String[]                  IMEI_LIST_GBR =             new String[] {
+                                                                                "866130020922066", //Центр
+                                                                                "866130021091747" //Центр
+                                                                        };
 
     private Settings() {
 
@@ -231,5 +239,13 @@ public class Settings {
 
     public String getSIGNALS_FILE() {
         return SIGNALS_FILE;
+    }
+
+    public String[] getIMEI_LIST_VIDOK() {
+        return IMEI_LIST_VIDOK;
+    }
+
+    public String[] getIMEI_LIST_GBR() {
+        return IMEI_LIST_GBR;
     }
 }
