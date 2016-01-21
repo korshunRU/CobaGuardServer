@@ -68,6 +68,8 @@ public class Settings {
 
     private final String[]                  IMEI_LIST_VIDOK =           new String[] {
                                                                                 "357967051804531", //Моисеев
+                                                                                "355320061803105", //Фурик
+                                                                                "355321061803103" //Фурик
                                                                         };
 
     private final String[]                  IMEI_LIST_GBR =             new String[] {
