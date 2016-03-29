@@ -8,6 +8,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 
@@ -25,6 +26,8 @@ public class ClientConnectThread
     private final ArrayList<String>         IMEI_LIST_VIDOK =           new ArrayList<>(Arrays.asList(Settings.getInstance().getIMEI_LIST_VIDOK()));
     private final ArrayList<String>         IMEI_LIST_GBR =             new ArrayList<>(Arrays.asList(Settings.getInstance().getIMEI_LIST_GBR()));
     private String                          timeStamp =                 new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(new Date());
+    private final long                      LAST_UPDATE_DATE_FILE_OFFSET =
+                                                                        3000;
 
 
 
@@ -59,7 +62,7 @@ public class ClientConnectThread
             PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(connectSocket.getOutputStream())), true)) {
 
             String query;
-            ArrayList<String> listNewFiles =                            null;
+            ArrayList<File> listNewFiles =                              null;
 
             while (!(query = in.readLine()).equals("disconnect") || (query = in.readLine()) != null) {
 
@@ -209,18 +212,17 @@ public class ClientConnectThread
      * @param out                           - ссылка на PrintWriter
      * @return                              - возвращается коллекция типа ArrayList
      */
-    private ArrayList<String> getFiles(String query, PrintWriter out, boolean isObjectFiles) {
-        ArrayList<String> listNewFiles =                                new ArrayList<>();
-
-        String lastUpdateDate[] =                                       query.split(":");
-        deviceId =                                                      lastUpdateDate[2];
+    private ArrayList<File> getFiles(String query, PrintWriter out, boolean isObjectFiles) {
+        ArrayList<File> listNewFiles =                      new ArrayList<>();
+        String lastUpdateDate[] =                           query.split(":");
+        deviceId =                                          lastUpdateDate[2];
         String version = lastUpdateDate.length >= 4 ?
-                                                                        lastUpdateDate[3] :
-                                                                        "OLD";
-
-        String str =                                                    (isObjectFiles) ?
-                                                                            "запрашивается объект " + lastUpdateDate[1] :
-                                                                            "запрашивается количество новых файлов";
+                                                            lastUpdateDate[3] :
+                                                            "OLD";
+        String str =                                        (isObjectFiles) ?
+                                                                "запрашивается объект " + lastUpdateDate[1] :
+                                                                "запрашивается количество новых файлов";
+        long lastUpdateFileDate =                           0;
 
         System.out.println(timeStamp + ": " + deviceId + ": " + version + ": " + str);
 
@@ -237,21 +239,47 @@ public class ClientConnectThread
 
                         if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER) && isObjectNumberEqualsWithFileName(lastUpdateDate[1], file.getName())) {
 
-                            listNewFiles.add(file.getName());
+                            listNewFiles.add(file);
+
+                            if(file.lastModified() > lastUpdateFileDate) {
+                                lastUpdateFileDate =        file.lastModified();
+                            }
 
                         }
 
-                    } else {
-
+                    }
+                    else {
 
                         if (file.isFile() && (Long.parseLong(lastUpdateDate[1]) - file.lastModified()) < 0) {
 
-                            listNewFiles.add(file.getName());
+                            listNewFiles.add(file);
 
                         }
                     }
 
                 }
+
+            }
+
+            if(listNewFiles.size() > 0 && isObjectFiles) {
+
+                Iterator<File> listNewFilesIterator =       listNewFiles.iterator();
+
+                while (listNewFilesIterator.hasNext()) {
+                    File file =                             listNewFilesIterator.next();
+//                    System.out.println(file.getName() + "_" + file.lastModified() + "_" + lastUpdateFileDate);
+
+                    if(file.lastModified() < lastUpdateFileDate - LAST_UPDATE_DATE_FILE_OFFSET ) {
+                        listNewFilesIterator.remove();
+                    }
+
+                }
+
+//                for (File file : listNewFiles) {
+//                    if(file.lastModified() < lastUpdateFileDate) {
+//                        listNewFiles.remove(file);
+//                    }
+//                }
 
             }
 
@@ -265,7 +293,7 @@ public class ClientConnectThread
 
         out.println(listNewFiles.size());
         out.println(Settings.getInstance().getBufferSize());
-
+//        System.out.println("return listNewFiles");
         return listNewFiles;
     }
 
@@ -281,7 +309,7 @@ public class ClientConnectThread
      * @param out                               - ссылка на PrintWriter
      * @return                                  - если все прошло без ошибок, возвращается TRUE
      */
-    private boolean sendFiles(ArrayList<String> listNewFiles, PrintWriter out) {
+    private boolean sendFiles(ArrayList<File> listNewFiles, PrintWriter out) {
 
         System.out.println(timeStamp + ": " + deviceId + ": Получен запрос на скачивание");
 
@@ -306,16 +334,16 @@ public class ClientConnectThread
 
 
 
-                for (String newFile : listNewFiles) {
+                for (File newFile : listNewFiles) {
 
                     String tmpPath =                                    Settings.getInstance().getFilesPath() + File.separator + deviceId;
-                    File fileName =                                     new File(tmpPath + File.separator + newFile);
+                    File fileName =                                     new File(tmpPath + File.separator + newFile.getName());
 
                     ImgEncode
-                            .getInstance(newFile, Settings.getInstance().getFilesPath(), tmpPath)
+                            .getInstance(newFile.getName(), Settings.getInstance().getFilesPath(), tmpPath)
                             .encodeImg();
 
-                    out.println(newFile);
+                    out.println(newFile.getName());
                     out.println(fileName.length());
 
 //            FileInputStream fis;
@@ -362,7 +390,7 @@ public class ClientConnectThread
                         int result =                                    disTestConnect.read();
 
                         if(result == 0) {
-                            System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА. result == 0");
+                            System.out.println(timeStamp + ": " + deviceId + ": " + newFile.getName() + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА. result == 0");
                             Root.isError =                              true;
 //                    try {
 //                        bis.close();
@@ -386,11 +414,11 @@ public class ClientConnectThread
                             return false;
                         }
 
-                        System.out.println(timeStamp + ": " + deviceId + ": Файл " + newFile + " передан");
+                        System.out.println(timeStamp + ": " + deviceId + ": Файл " + newFile.getName() + " передан");
 
                     } catch (IOException e) {
                         e.printStackTrace();
-                        System.out.println(timeStamp + ": " + deviceId + ": " + newFile + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
+                        System.out.println(timeStamp + ": " + deviceId + ": " + newFile.getName() + " ОШИБКА ПЕРЕДАЧИ ФАЙЛА");
                         Root.isError =                                  true;
 //                try {
 //                    bis.close();
