@@ -151,15 +151,45 @@ public class ClientConnectThread
      */
     private boolean isObjectNumberEqualsWithFileName(String objectNumber, String fileName) {
 
-        String fileNameSplit[] = fileName.substring(0, fileName.lastIndexOf(OBJECT_PART_DIVIDER)).split(",");
+        String fileNameSplit[] =                            (fileName.contains("_")) ?
+                                                                fileName
+                                                                        .substring(fileName.indexOf("_") + 1,
+                                                                                fileName.lastIndexOf(OBJECT_PART_DIVIDER))
+                                                                        .split(",") :
+                                                                fileName
+                                                                        .substring(0, fileName.lastIndexOf(OBJECT_PART_DIVIDER))
+                                                                        .split(",");
 
-        if (fileNameSplit.length > 1) {
+        for (String fn : fileNameSplit) {
 
-            for (String fn : fileNameSplit) {
+            if (isInteger(fn) && fn.equals(objectNumber)) {
 
-                if (isInteger(fn) && fn.equals(objectNumber)) {
+                return true;
 
-                    return true;
+            }
+
+        }
+
+        return false;
+    }
+
+
+
+
+
+    private void downloadPartnersPassports(ArrayList<File> listNewFiles, long lastUpdateDate, String partnerName) {
+
+        File path =                                         new File(Settings.getInstance().getFilesPath() + "/" + partnerName);
+        File[] listFiles =                                  path.listFiles();
+
+        System.out.println(path + "_" + listFiles);
+        if (path.isDirectory() && listFiles != null) {
+
+            for (File file : listFiles) {
+
+                if (file.isFile() && (lastUpdateDate - file.lastModified()) < 0) {
+
+                    listNewFiles.add(file);
 
                 }
 
@@ -167,15 +197,25 @@ public class ClientConnectThread
 
         }
 
-        else {
 
-            if (isInteger(fileNameSplit[0]) && fileNameSplit[0].equals(objectNumber)) {
-                return true;
-            }
+//        //SKIT
+//        File cobaPathSKIT =                                  new File(Settings.getInstance().getFilesPath() + "/SKIT");
+//        File[] countFilesSKIT =                              cobaPathSKIT.listFiles();
+//
+//        if (cobaPathSKIT.isDirectory() && countFilesSKIT != null) {
+//
+//            for (File file : countFilesSKIT) {
+//
+//                if (file.isFile() && (lastUpdateDate - file.lastModified()) < 0) {
+//
+//                    listNewFiles.add(file);
+//
+//                }
+//
+//            }
+//
+//        }
 
-        }
-
-        return false;
     }
 
 
@@ -228,8 +268,17 @@ public class ClientConnectThread
 
         if(IMEI_LIST.contains(deviceId) || IMEI_LIST_GBR.contains(deviceId)) {
 
-            File cobaPath = new File(Settings.getInstance().getFilesPath());
-            File[] countFiles = cobaPath.listFiles();
+            File cobaPath =                                 new File(Settings.getInstance().getFilesPath());
+            File[] countFiles;
+
+            if(isObjectFiles) {
+                FilenameFilter filenameFilter =             (dir, name) -> name.contains(lastUpdateDate[1]);
+                countFiles =                                cobaPath.listFiles(filenameFilter);
+            }
+
+            else {
+                countFiles =                                cobaPath.listFiles();
+            }
 
             if (cobaPath.isDirectory() && countFiles != null) {
 
@@ -240,6 +289,7 @@ public class ClientConnectThread
                         if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER) && isObjectNumberEqualsWithFileName(lastUpdateDate[1], file.getName())) {
 
                             listNewFiles.add(file);
+                            System.out.println("add " + file);
 
                             if(file.lastModified() > lastUpdateFileDate) {
                                 lastUpdateFileDate =        file.lastModified();
@@ -261,25 +311,36 @@ public class ClientConnectThread
 
             }
 
-            if(listNewFiles.size() > 0 && isObjectFiles) {
+
+            ///////// =========================== ДЛЯ ГРУПП!!!!
+//            System.out.println(listNewFiles.size());
+//
+//            if(IMEI_LIST_GBR.contains(deviceId)) {
+//                for(String partnerName : Settings.getInstance().getPARTNERS_LIST()) {
+//                    downloadPartnersPassports(listNewFiles, Long.parseLong(lastUpdateDate[1]), partnerName);
+//                }
+//            }
+//
+//            System.out.println("GBR " + listNewFiles.size());
+            ///////// =========================== ДЛЯ ГРУПП!!!!
+
+
+
+
+            if(listNewFiles.size() > 0 && isObjectFiles && IMEI_LIST.contains(deviceId)) {
 
                 Iterator<File> listNewFilesIterator =       listNewFiles.iterator();
 
                 while (listNewFilesIterator.hasNext()) {
                     File file =                             listNewFilesIterator.next();
-//                    System.out.println(file.getName() + "_" + file.lastModified() + "_" + lastUpdateFileDate);
 
-                    if(file.lastModified() < lastUpdateFileDate - LAST_UPDATE_DATE_FILE_OFFSET ) {
+                    System.out.println(file.getName() + "_" + file.lastModified() + "_" + lastUpdateFileDate);
+
+                    if(file.lastModified() < lastUpdateFileDate - LAST_UPDATE_DATE_FILE_OFFSET) {
                         listNewFilesIterator.remove();
                     }
 
                 }
-
-//                for (File file : listNewFiles) {
-//                    if(file.lastModified() < lastUpdateFileDate) {
-//                        listNewFiles.remove(file);
-//                    }
-//                }
 
             }
 

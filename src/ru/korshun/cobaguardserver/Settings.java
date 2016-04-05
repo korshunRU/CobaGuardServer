@@ -35,8 +35,8 @@ public class Settings {
                                                                                 "866130022032393", //Зарубо
                                                                                 "866130022226318", //Зарубо
                                                                                 "865749023013713", //Смирнов
-                                                                                "866494010384525", //Лобанов
-                                                                                "866494015384553", //Лобанов
+                                                                                "352879070024733", //Лобанов
+                                                                                "352879070055737", //Лобанов
                                                                                 "356604057607078", //Хамин
                                                                                 "355101064680439", //Плюхин
                                                                                 "865154028766672", //Новиков
@@ -81,6 +81,7 @@ public class Settings {
                                                                         };
 
     private final String[]                  IMEI_LIST_GBR =             new String[] {
+                                                                                "356446052938789", //Литвиненко
                                                                                 "866130020922066", //Центр
                                                                                 "866130021091747", //Центр
                                                                                 "865676028012814", //Вега
@@ -108,6 +109,15 @@ public class Settings {
                                                                                 "866130020921944", //Юпитер
                                                                                 "866130020924526" //Ястреб
                                                                         };
+
+    private final String[]              PARTNERS_LIST =                 new String[] {
+                                                                                "OKO",
+                                                                                "VIDOK",
+                                                                                "ARGO",
+                                                                                "OSPAS",
+                                                                                "SKIT",
+                                                                                "TEST"
+    };
 
     private Settings() {
 
@@ -281,5 +291,9 @@ public class Settings {
 
     public String[] getIMEI_LIST_GBR() {
         return IMEI_LIST_GBR;
+    }
+
+    public String[] getPARTNERS_LIST() {
+        return PARTNERS_LIST;
     }
 }
