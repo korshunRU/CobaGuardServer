@@ -174,47 +174,48 @@ public class ClientConnectThread
     }
 
 
-
-
-
-    private void downloadPartnersPassports(ArrayList<File> listNewFiles, long lastUpdateDate, String partnerName) {
+    /**
+     *  Функция идет в папки с партнерскими паспортами и дергает оттуда файлы по тому же принципу, что и из общей
+     *  папки - т.е. выбирает все файлы, которые "младше" по времени последнего обновления
+     * @param listNewFiles                      - ссылка на коллекцию с выбранными паспортами, в нее добавляем новые
+     * @param lastUpdateDate                    - дата последнего обновления, которая прилетела от клиента в long формате
+     * @param partnerName                       - имя партнерской папки на сервере фтп
+     * @param isObjectFiles                     - если true - значит запрашивается какой-то конкретный файл
+     */
+    private void downloadPartnersPassports(ArrayList<File> listNewFiles, String lastUpdateDate,
+                                           String partnerName, boolean isObjectFiles) {
 
         File path =                                         new File(Settings.getInstance().getFilesPath() + "/" + partnerName);
         File[] listFiles =                                  path.listFiles();
 
-        System.out.println(path + "_" + listFiles);
         if (path.isDirectory() && listFiles != null) {
 
             for (File file : listFiles) {
 
-                if (file.isFile() && (lastUpdateDate - file.lastModified()) < 0) {
+                if (isObjectFiles) {
 
-                    listNewFiles.add(file);
+                    if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER) &&
+                            isObjectNumberEqualsWithFileName(lastUpdateDate, file.getName())) {
+
+                        listNewFiles.add(file);
+
+                    }
+
+                }
+
+                else {
+
+                    if (file.isFile() && (Long.parseLong(lastUpdateDate) - file.lastModified()) < 0) {
+
+                        listNewFiles.add(file);
+
+                    }
 
                 }
 
             }
 
         }
-
-
-//        //SKIT
-//        File cobaPathSKIT =                                  new File(Settings.getInstance().getFilesPath() + "/SKIT");
-//        File[] countFilesSKIT =                              cobaPathSKIT.listFiles();
-//
-//        if (cobaPathSKIT.isDirectory() && countFilesSKIT != null) {
-//
-//            for (File file : countFilesSKIT) {
-//
-//                if (file.isFile() && (lastUpdateDate - file.lastModified()) < 0) {
-//
-//                    listNewFiles.add(file);
-//
-//                }
-//
-//            }
-//
-//        }
 
     }
 
@@ -289,7 +290,7 @@ public class ClientConnectThread
                         if (file.isFile() && file.getName().contains(OBJECT_PART_DIVIDER) && isObjectNumberEqualsWithFileName(lastUpdateDate[1], file.getName())) {
 
                             listNewFiles.add(file);
-                            System.out.println("add " + file);
+//                            System.out.println("add " + file);
 
                             if(file.lastModified() > lastUpdateFileDate) {
                                 lastUpdateFileDate =        file.lastModified();
@@ -317,7 +318,7 @@ public class ClientConnectThread
 //
 //            if(IMEI_LIST_GBR.contains(deviceId)) {
 //                for(String partnerName : Settings.getInstance().getPARTNERS_LIST()) {
-//                    downloadPartnersPassports(listNewFiles, Long.parseLong(lastUpdateDate[1]), partnerName);
+//                    downloadPartnersPassports(listNewFiles, lastUpdateDate[1], partnerName, isObjectFiles);
 //                }
 //            }
 //
@@ -334,7 +335,7 @@ public class ClientConnectThread
                 while (listNewFilesIterator.hasNext()) {
                     File file =                             listNewFilesIterator.next();
 
-                    System.out.println(file.getName() + "_" + file.lastModified() + "_" + lastUpdateFileDate);
+//                    System.out.println(file.getName() + "_" + file.lastModified() + "_" + lastUpdateFileDate);
 
                     if(file.lastModified() < lastUpdateFileDate - LAST_UPDATE_DATE_FILE_OFFSET) {
                         listNewFilesIterator.remove();
