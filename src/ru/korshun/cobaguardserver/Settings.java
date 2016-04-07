@@ -28,7 +28,7 @@ public class Settings {
     private int                             bufferSize =                BUFFER_SIZE_DEFAULT;
 
     private final String[]                  IMEI_LIST =                 new String[] {
-                                                                                "356446052938789", //Литвиненко
+                                                                                //"356446052938789", //Литвиненко
                                                                                 "865749023045665", //Зубов
                                                                                 "353737067316257", //Аткин
                                                                                 "353646069029281", //Манушкин
@@ -81,7 +81,7 @@ public class Settings {
                                                                         };
 
     private final String[]                  IMEI_LIST_GBR =             new String[] {
-                                                                                //"356446052938789", //Литвиненко
+                                                                                "356446052938789", //Литвиненко
                                                                                 "866130020922066", //Центр
                                                                                 "866130021091747", //Центр
                                                                                 "865676028012814", //Вега

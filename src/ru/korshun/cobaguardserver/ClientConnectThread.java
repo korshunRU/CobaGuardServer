@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -313,17 +314,17 @@ public class ClientConnectThread
             }
 
 
-            ///////// =========================== ДЛЯ ГРУПП!!!!
-//            System.out.println(listNewFiles.size());
-//
-//            if(IMEI_LIST_GBR.contains(deviceId)) {
-//                for(String partnerName : Settings.getInstance().getPARTNERS_LIST()) {
-//                    downloadPartnersPassports(listNewFiles, lastUpdateDate[1], partnerName, isObjectFiles);
-//                }
-//            }
-//
-//            System.out.println("GBR " + listNewFiles.size());
-            ///////// =========================== ДЛЯ ГРУПП!!!!
+            /////// =========================== ДЛЯ ГРУПП!!!!
+            System.out.println(listNewFiles.size());
+
+            if(IMEI_LIST_GBR.contains(deviceId)) {
+                for(String partnerName : Settings.getInstance().getPARTNERS_LIST()) {
+                    downloadPartnersPassports(listNewFiles, lastUpdateDate[1], partnerName, isObjectFiles);
+                }
+            }
+
+            System.out.println("GBR " + listNewFiles.size());
+            /////// =========================== ДЛЯ ГРУПП!!!!
 
 
 
@@ -401,8 +402,14 @@ public class ClientConnectThread
                     String tmpPath =                                    Settings.getInstance().getFilesPath() + File.separator + deviceId;
                     File fileName =                                     new File(tmpPath + File.separator + newFile.getName());
 
+//                    System.out.println(Settings.getInstance().getFilesPath() + " - " + Paths.get(newFile.toURI()).getParent());
+
+//                    ImgEncode
+//                            .getInstance(newFile.getName(), Settings.getInstance().getFilesPath(), tmpPath)
+//                            .encodeImg();
+
                     ImgEncode
-                            .getInstance(newFile.getName(), Settings.getInstance().getFilesPath(), tmpPath)
+                            .getInstance(newFile.getName(), Paths.get(newFile.toURI()).getParent().toString(), tmpPath)
                             .encodeImg();
 
                     out.println(newFile.getName());
