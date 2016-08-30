@@ -11,7 +11,7 @@ import java.util.concurrent.Executors;
 public class Root {
 
 
-    public static boolean isError =                                     false;
+    static boolean isError =                                     false;
 
 
     @SuppressWarnings("InfiniteLoopStatement")

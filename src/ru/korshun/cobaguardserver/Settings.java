@@ -1,13 +1,11 @@
 package ru.korshun.cobaguardserver;
 
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 
 @SuppressWarnings("FieldCanBeLocal")
-public class Settings {
+class Settings {
 
     private final String                    CONFIG_FILE =               "coba.conf";
 
@@ -131,7 +129,7 @@ public class Settings {
 
 
 
-    public static Settings getInstance() {
+    static Settings getInstance() {
 
         Settings localInstance =                                        instance;
 
@@ -229,7 +227,7 @@ public class Settings {
     /**
      *  Геттеры и сеттеры
      */
-    public int getAcceptTimeOut() {
+    int getAcceptTimeOut() {
         return acceptTimeOut * 1000;
     }
 
@@ -237,7 +235,7 @@ public class Settings {
         this.acceptTimeOut =                                            acceptTimeOut;
     }
 
-    public int getBufferSize() {
+    int getBufferSize() {
         return bufferSize;
     }
 
@@ -245,7 +243,7 @@ public class Settings {
         this.bufferSize =                                               bufferSize;
     }
 
-    public int getConnectPort() {
+    int getConnectPort() {
         return connectPort;
     }
 
@@ -253,7 +251,7 @@ public class Settings {
         this.connectPort =                                              connectPort;
     }
 
-    public int getConnectPortFiles() {
+    int getConnectPortFiles() {
         return connectPortFiles;
     }
 
@@ -261,7 +259,7 @@ public class Settings {
         this.connectPortFiles =                                         connectPortFiles;
     }
 
-    public String getFilesPath() {
+    String getFilesPath() {
         return filesPath;
     }
 
@@ -269,35 +267,35 @@ public class Settings {
         this.filesPath =                                                filesPath;
     }
 
-    public String[] getIMEI_LIST() {
+    String[] getIMEI_LIST() {
         return IMEI_LIST;
     }
 
-    public String getGUARD_DIR() {
+    String getGUARD_DIR() {
         return GUARD_DIR;
     }
 
-    public String getGUARD_FILE() {
+    String getGUARD_FILE() {
         return GUARD_FILE;
     }
 
-    public String getSIGNALS_DIR() {
+    String getSIGNALS_DIR() {
         return SIGNALS_DIR;
     }
 
-    public String getSIGNALS_FILE() {
+    String getSIGNALS_FILE() {
         return SIGNALS_FILE;
     }
 
-    public String[] getIMEI_LIST_VIDOK() {
+    String[] getIMEI_LIST_VIDOK() {
         return IMEI_LIST_VIDOK;
     }
 
-    public String[] getIMEI_LIST_GBR() {
+    String[] getIMEI_LIST_GBR() {
         return IMEI_LIST_GBR;
     }
 
-    public String[] getPARTNERS_LIST() {
+    String[] getPARTNERS_LIST() {
         return PARTNERS_LIST;
     }
 }
