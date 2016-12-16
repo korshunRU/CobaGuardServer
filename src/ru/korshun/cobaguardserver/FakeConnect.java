@@ -7,7 +7,7 @@ import java.util.TimerTask;
 
 
 
-public class FakeConnect
+class FakeConnect
         extends TimerTask {
 
     @Override
