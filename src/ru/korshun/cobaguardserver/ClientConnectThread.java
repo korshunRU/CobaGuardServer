@@ -30,6 +30,8 @@ public class ClientConnectThread
     private final long                      LAST_UPDATE_DATE_FILE_OFFSET =
                                                                         3000;
 
+    private boolean isOneFile = true;
+
 
 
 
@@ -70,7 +72,8 @@ public class ClientConnectThread
 
                 // Запрашиваются все файлы для обновления
                 if(query.startsWith("getNewFiles:")) {
-                    listNewFiles =                                      getFiles(query, out, false);
+                    isOneFile = false;
+                    listNewFiles =                                      getFiles(query, out, isOneFile);
                     filesToDownload =                                   listNewFiles.size();
                 }
 
@@ -79,7 +82,8 @@ public class ClientConnectThread
 
                 // Запрашиваются файлы на один объект
                 else if(query.startsWith("getObjectFiles:")) {
-                    listNewFiles =                                      getFiles(query, out, true);
+                    isOneFile = true;
+                    listNewFiles =                                      getFiles(query, out, isOneFile);
                     filesToDownload =                                   listNewFiles.size();
                 }
 
@@ -140,6 +144,13 @@ public class ClientConnectThread
 
 
 
+    /**
+     *  Получаем значение текущей даты вместе с временем
+     * @return              - дата и время в формате "dd.MM.yyyy HH:mm:ss"
+     */
+    protected String getCurrentDateAndTime() {
+        return new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(new Date());
+    }
 
 
 
@@ -527,6 +538,21 @@ public class ClientConnectThread
                         }
 
                     }
+                }
+
+                if(IMEI_LIST_GBR.contains(deviceId) && !isOneFile) {
+                    File logFile = new File(Settings.getInstance().getLOG_DIR() + File.separator +
+                            Settings.getInstance().getLOG_FILE());
+
+                    try(BufferedWriter writer = new BufferedWriter(new FileWriter(logFile, true))){
+                        String text = String.format("%s (%d)%s", Settings.getInstance().getIMEI_MAP_GBR().get(deviceId),
+                                listNewFiles.size(), "\r\n");
+                        writer.append(String.format("%s %s", getCurrentDateAndTime(), text));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        return false;
+                    }
+//                    System.out.println("Update succesfully");
                 }
 
             } catch (IOException e) {
