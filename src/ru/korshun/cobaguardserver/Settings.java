@@ -29,7 +29,6 @@ class Settings {
     private String                          filesPath;
     private int                             bufferSize =                BUFFER_SIZE_DEFAULT;
 
-
     private final String[]                  IMEI_LIST =                 new String[] {
                                                                                 "862630038397890", //Литвиненко
                                                                                 "356377065847495", //Зубов
