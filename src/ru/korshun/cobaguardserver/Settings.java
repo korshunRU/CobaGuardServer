@@ -72,6 +72,7 @@ class Settings {
                                                                                 "866607021979641" //Прудников
     };
 
+
     private final String[]                  IMEI_LIST_VIDOK =           new String[] {
                                                                                 "357967051804531", //Моисеев
                                                                                 "358436074737127", //Фурик
